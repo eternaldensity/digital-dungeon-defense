@@ -1,42 +1,95 @@
-//! 3D orthographic camera for top-down view
+//! 3D perspective camera with angled isometric-style view
 
-use bevy::{camera::ScalingMode, prelude::*};
+use bevy::prelude::*;
 
 /// Marker component for the main game camera
 #[derive(Component)]
 pub struct MainCamera;
 
-/// Plugin that sets up the 3D orthographic camera
+/// Camera settings for the isometric-style 3D view
+#[derive(Resource)]
+pub struct CameraSettings {
+    /// Distance from the camera to the look-at target
+    pub distance: f32,
+    /// Pitch angle in degrees (angle down from horizontal, 0 = looking at horizon, 90 = looking straight down)
+    pub pitch_degrees: f32,
+    /// Yaw angle in degrees (rotation around Y axis, 0 = looking along -Z)
+    pub yaw_degrees: f32,
+    /// Vertical field of view in degrees
+    pub fov_degrees: f32,
+}
+
+impl Default for CameraSettings {
+    fn default() -> Self {
+        Self {
+            distance: 400.0,
+            pitch_degrees: 55.0,  // Angled down to see 3D depth
+            yaw_degrees: 0.0,    // Looking along -Z (north in game terms)
+            fov_degrees: 50.0,
+        }
+    }
+}
+
+/// Plugin that sets up the 3D perspective camera
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_camera);
+        app.insert_resource(CameraSettings::default())
+            .add_systems(Startup, setup_camera);
     }
 }
 
-fn setup_camera(mut commands: Commands) {
-    // Spawn orthographic 3D camera looking down at the grid
+fn setup_camera(mut commands: Commands, settings: Res<CameraSettings>) {
+    let (position, rotation) = calculate_camera_transform(&settings, Vec3::ZERO);
+
     commands.spawn((
         MainCamera,
         Camera3d::default(),
-        Projection::from(OrthographicProjection {
-            // Fixed vertical height ensures consistent view
-            scaling_mode: ScalingMode::FixedVertical {
-                viewport_height: 720.0,
-            },
-            near: 0.1,
-            far: 1000.0,
-            ..OrthographicProjection::default_3d()
+        Projection::from(PerspectiveProjection {
+            fov: settings.fov_degrees.to_radians(),
+            near: 1.0,
+            far: 2000.0,
+            ..default()
         }),
-        // Position camera high above, looking down
-        Transform::from_xyz(0.0, 500.0, 0.1)
-            .looking_at(Vec3::ZERO, Vec3::Z),
+        Transform {
+            translation: position,
+            rotation,
+            ..default()
+        },
     ));
 }
 
-/// Camera height above the game plane
-pub const CAMERA_HEIGHT: f32 = 500.0;
+/// Calculate camera position and rotation from settings
+/// Returns (position, rotation) for the camera transform
+fn calculate_camera_transform(settings: &CameraSettings, look_at: Vec3) -> (Vec3, Quat) {
+    let pitch_rad = settings.pitch_degrees.to_radians();
+    let yaw_rad = settings.yaw_degrees.to_radians();
 
-/// Viewport height in world units
+    // Calculate offset from look_at point
+    // At pitch=0 (horizontal), camera is at distance along XZ plane
+    // At pitch=90 (straight down), camera is directly above
+    let horizontal_distance = settings.distance * pitch_rad.cos();
+    let vertical_distance = settings.distance * pitch_rad.sin();
+
+    let offset = Vec3::new(
+        horizontal_distance * yaw_rad.sin(),
+        vertical_distance,
+        horizontal_distance * yaw_rad.cos(),
+    );
+
+    let position = look_at + offset;
+
+    // Create rotation to look at target
+    // We use look_to which expects the direction to look (negated offset)
+    let forward = (look_at - position).normalize();
+    let rotation = Quat::from_rotation_arc(Vec3::NEG_Z, forward);
+
+    (position, rotation)
+}
+
+/// Camera height above the game plane (approximate, for compatibility)
+pub const CAMERA_HEIGHT: f32 = 400.0;
+
+/// Viewport height in world units (approximate, perspective varies with distance)
 pub const VIEWPORT_HEIGHT: f32 = 720.0;

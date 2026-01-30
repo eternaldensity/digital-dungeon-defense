@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Convert rendering from 2D sprites to 3D meshes (#30)
 - Design and implement integrated gameplay loop with title screen and building mode (#28)
 - Design building mode and tile-based floor planning UI (#24)
 - Add floor damage modifier application to combat (#22)
@@ -26,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix speed modifier applying every frame (#21)
 
 ### Changed
+- Update camera to use perspective projection (#31)
 - Add visual rendering for planning tiles in build mode (#27)
 - Add building mode input handling for tile placement (#26)
 - Create crates/building/ with core data structures (#25)
