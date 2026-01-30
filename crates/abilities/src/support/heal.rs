@@ -4,6 +4,7 @@
 //! Completely self-contained - all logic lives in this file.
 
 use bevy::prelude::*;
+use bevy::ecs::message::{Message, MessageReader, MessageWriter};
 use ddd_core::{AccumulatedTags, CombatTag, Health, Team};
 
 use crate::{AbilityCooldown, AreaOfEffect, TargetsAllies};
@@ -14,7 +15,7 @@ impl Plugin for HealPlugin {
     fn build(&self, app: &mut App) {
         app
             .register_type::<Heal>()
-            .add_event::<HealEvent>()
+            .add_message::<HealEvent>()
             .add_systems(Update, (
                 heal_cooldown_system,
                 heal_targeting_system,
@@ -63,8 +64,8 @@ impl Default for HealBundle {
     }
 }
 
-/// Event fired when healing is applied
-#[derive(Event)]
+/// Message fired when healing is applied
+#[derive(Message)]
 pub struct HealEvent {
     pub healer: Entity,
     pub target: Entity,
@@ -91,7 +92,7 @@ fn heal_targeting_system(
         &Team,
     )>,
     allies: Query<(Entity, &Transform, &Health, &Team)>,
-    mut heal_events: EventWriter<HealEvent>,
+    mut heal_events: MessageWriter<HealEvent>,
 ) {
     for (healer_entity, healer_transform, heal, mut cooldown, healer_team) in healers.iter_mut() {
         if !cooldown.ready {
@@ -130,7 +131,7 @@ fn heal_targeting_system(
         if let Some((target, _)) = best_target {
             cooldown.trigger();
 
-            heal_events.send(HealEvent {
+            heal_events.write(HealEvent {
                 healer: healer_entity,
                 target,
                 amount: heal.amount,
@@ -141,7 +142,7 @@ fn heal_targeting_system(
 
 /// Apply healing from HealEvents
 fn apply_healing_system(
-    mut heal_events: EventReader<HealEvent>,
+    mut heal_events: MessageReader<HealEvent>,
     mut targets: Query<&mut Health>,
     mut healer_tags: Query<&mut AccumulatedTags>,
 ) {

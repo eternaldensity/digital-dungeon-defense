@@ -1,6 +1,7 @@
 //! Combat-related components and systems
 
 use bevy::prelude::*;
+use bevy::ecs::message::MessageReader;
 use std::collections::HashMap;
 
 use crate::{DamageEvent, PlayerResources, Team};
@@ -60,8 +61,8 @@ pub fn lifetime_system(
 ) {
     for (entity, mut lifetime) in query.iter_mut() {
         lifetime.timer.tick(time.delta());
-        if lifetime.timer.finished() {
-            commands.entity(entity).despawn_recursive();
+        if lifetime.timer.is_finished() {
+            commands.entity(entity).despawn();
         }
     }
 }
@@ -135,7 +136,7 @@ pub struct InCombat;
 
 /// Collects floof when enemies are damaged
 pub fn collect_floof_system(
-    mut damage_events: EventReader<DamageEvent>,
+    mut damage_events: MessageReader<DamageEvent>,
     mut resources: ResMut<PlayerResources>,
     enemies: Query<&Team>,
 ) {

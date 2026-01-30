@@ -3,6 +3,7 @@
 //! A floor type that burns enemies and enhances fire-based abilities.
 
 use bevy::prelude::*;
+use bevy::ecs::message::MessageWriter;
 use ddd_core::{DamageEvent, DamageType, OnFloor, Team};
 
 use crate::{DamageModifier, FloorDamageOverTime, FloorTypeMarker};
@@ -63,7 +64,7 @@ impl FireFloorBundle {
 fn fire_floor_dot_system(
     mut fire_floors: Query<(&FloorTypeMarker, &mut FloorDamageOverTime), With<FireFloor>>,
     entities_on_floors: Query<(Entity, &OnFloor, &Team)>,
-    mut damage_events: EventWriter<DamageEvent>,
+    mut damage_events: MessageWriter<DamageEvent>,
     time: Res<Time>,
 ) {
     for (floor_marker, mut dot) in fire_floors.iter_mut() {
@@ -83,7 +84,7 @@ fn fire_floor_dot_system(
                 };
 
                 if should_damage {
-                    damage_events.send(DamageEvent {
+                    damage_events.write(DamageEvent {
                         target: entity,
                         source: None,
                         amount: dot.damage_per_tick,

@@ -1,6 +1,7 @@
 //! Health and damage systems
 
 use bevy::prelude::*;
+use bevy::ecs::message::{Message, MessageReader, MessageWriter};
 
 /// Health component for any entity that can take damage
 #[derive(Component, Reflect, Default)]
@@ -47,8 +48,8 @@ impl Default for DamageType {
     }
 }
 
-/// Event fired when damage is dealt
-#[derive(Event)]
+/// Message fired when damage is dealt
+#[derive(Message)]
 pub struct DamageEvent {
     pub target: Entity,
     pub source: Option<Entity>,
@@ -56,8 +57,8 @@ pub struct DamageEvent {
     pub damage_type: DamageType,
 }
 
-/// Event fired when an entity dies
-#[derive(Event)]
+/// Message fired when an entity dies
+#[derive(Message)]
 pub struct DeathEvent {
     pub entity: Entity,
     pub killed_by: Option<Entity>,
@@ -65,7 +66,7 @@ pub struct DeathEvent {
 
 /// System that applies damage from DamageEvents
 pub fn apply_damage_system(
-    mut events: EventReader<DamageEvent>,
+    mut events: MessageReader<DamageEvent>,
     mut query: Query<&mut Health>,
 ) {
     for event in events.read() {
@@ -78,11 +79,11 @@ pub fn apply_damage_system(
 /// System that checks for deaths and fires DeathEvents
 pub fn check_death_system(
     query: Query<(Entity, &Health), Changed<Health>>,
-    mut death_events: EventWriter<DeathEvent>,
+    mut death_events: MessageWriter<DeathEvent>,
 ) {
     for (entity, health) in query.iter() {
         if health.is_dead() {
-            death_events.send(DeathEvent {
+            death_events.write(DeathEvent {
                 entity,
                 killed_by: None, // Could track last damage source
             });

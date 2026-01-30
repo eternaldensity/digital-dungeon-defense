@@ -3,6 +3,7 @@
 //! A trap that deals heavy damage to a single enemy, then needs manual reset.
 
 use bevy::prelude::*;
+use bevy::ecs::message::{MessageReader, MessageWriter};
 use ddd_core::{DamageEvent, DamageType, OnFloor, Team};
 
 use crate::{ManualReset, Trap, TrapTriggeredEvent, TriggerZone};
@@ -75,7 +76,7 @@ fn data_spike_detection_system(
         &mut Trap,
     ), With<DataSpike>>,
     enemies: Query<(Entity, &Transform, &OnFloor, &Team)>,
-    mut trigger_events: EventWriter<TrapTriggeredEvent>,
+    mut trigger_events: MessageWriter<TrapTriggeredEvent>,
 ) {
     for (spike_entity, spike_transform, trigger_zone, spike_floor, mut trap) in spikes.iter_mut() {
         if !trap.can_trigger() {
@@ -95,7 +96,7 @@ fn data_spike_detection_system(
                 trap.trigger();
                 trap.active = false; // Needs manual reset
 
-                trigger_events.send(TrapTriggeredEvent {
+                trigger_events.write(TrapTriggeredEvent {
                     trap: spike_entity,
                     triggered_by: enemy_entity,
                 });
@@ -108,13 +109,13 @@ fn data_spike_detection_system(
 
 /// Applies damage when data spike is triggered
 fn data_spike_damage_system(
-    mut trigger_events: EventReader<TrapTriggeredEvent>,
+    mut trigger_events: MessageReader<TrapTriggeredEvent>,
     spikes: Query<&DataSpike>,
-    mut damage_events: EventWriter<DamageEvent>,
+    mut damage_events: MessageWriter<DamageEvent>,
 ) {
     for event in trigger_events.read() {
         if let Ok(spike) = spikes.get(event.trap) {
-            damage_events.send(DamageEvent {
+            damage_events.write(DamageEvent {
                 target: event.triggered_by,
                 source: Some(event.trap),
                 amount: spike.damage,

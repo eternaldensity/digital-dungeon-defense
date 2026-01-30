@@ -3,6 +3,7 @@
 //! A barrier that deals fire damage to enemies crossing it.
 
 use bevy::prelude::*;
+use bevy::ecs::message::{MessageReader, MessageWriter};
 use ddd_core::{DamageEvent, DamageType, OnFloor, Team};
 
 use crate::{Trap, TrapTriggeredEvent, TriggerZone};
@@ -85,7 +86,7 @@ fn firewall_detection_system(
     enemies: Query<(Entity, &Transform, &OnFloor), With<Team>>,
     teams: Query<&Team>,
     mut commands: Commands,
-    mut trigger_events: EventWriter<TrapTriggeredEvent>,
+    mut trigger_events: MessageWriter<TrapTriggeredEvent>,
 ) {
     for (firewall_entity, fw_transform, trigger_zone, fw_floor, mut trap, hit_list) in firewalls.iter_mut() {
         if !trap.can_trigger() {
@@ -122,7 +123,7 @@ fn firewall_detection_system(
 
             // Trigger the trap
             trap.trigger();
-            trigger_events.send(TrapTriggeredEvent {
+            trigger_events.write(TrapTriggeredEvent {
                 trap: firewall_entity,
                 triggered_by: enemy_entity,
             });
@@ -139,13 +140,13 @@ fn firewall_detection_system(
 
 /// Applies damage when firewall is triggered
 fn firewall_damage_system(
-    mut trigger_events: EventReader<TrapTriggeredEvent>,
+    mut trigger_events: MessageReader<TrapTriggeredEvent>,
     firewalls: Query<&Firewall>,
-    mut damage_events: EventWriter<DamageEvent>,
+    mut damage_events: MessageWriter<DamageEvent>,
 ) {
     for event in trigger_events.read() {
         if let Ok(firewall) = firewalls.get(event.trap) {
-            damage_events.send(DamageEvent {
+            damage_events.write(DamageEvent {
                 target: event.triggered_by,
                 source: Some(event.trap),
                 amount: firewall.damage,

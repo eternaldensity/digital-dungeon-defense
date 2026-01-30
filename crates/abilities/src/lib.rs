@@ -88,7 +88,7 @@ impl AbilityCooldown {
 
     pub fn tick(&mut self, delta: std::time::Duration) {
         self.timer.tick(delta);
-        if self.timer.finished() {
+        if self.timer.is_finished() {
             self.ready = true;
         }
     }

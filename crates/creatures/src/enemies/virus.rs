@@ -71,7 +71,7 @@ fn virus_pathfinding_system(
     core: Query<(&Transform, &GridPosition), With<DungeonCore>>,
     dungeon: Res<DungeonGrid>,
 ) {
-    let Ok((core_transform, core_grid_pos)) = core.get_single() else {
+    let Ok((core_transform, core_grid_pos)) = core.single() else {
         return;
     };
 

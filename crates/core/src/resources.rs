@@ -1,6 +1,7 @@
 //! Game resources: Bytes, Floof, and Chips
 
 use bevy::prelude::*;
+use bevy::ecs::message::Message;
 use serde::{Deserialize, Serialize};
 
 /// The three core currencies in Digital Dungeon Defense
@@ -76,8 +77,8 @@ impl PlayerResources {
     }
 }
 
-/// Event fired when resources are gained
-#[derive(Event)]
+/// Message fired when resources are gained
+#[derive(Message)]
 pub struct ResourceGainEvent {
     pub bytes: f32,
     pub floof: f32,

@@ -1,6 +1,7 @@
 //! Base trap systems and components shared by all traps
 
 use bevy::prelude::*;
+use bevy::ecs::message::{Message, MessageReader};
 use ddd_core::PlayerResources;
 
 pub struct TrapBasePlugin;
@@ -9,8 +10,8 @@ impl Plugin for TrapBasePlugin {
     fn build(&self, app: &mut App) {
         app
             .register_type::<Trap>()
-            .add_event::<TrapTriggeredEvent>()
-            .add_event::<TrapResetEvent>()
+            .add_message::<TrapTriggeredEvent>()
+            .add_message::<TrapResetEvent>()
             .add_systems(Update, (
                 trap_cooldown_system,
                 trap_reset_system,
@@ -67,15 +68,15 @@ impl Trap {
     }
 }
 
-/// Event fired when a trap is triggered
-#[derive(Event)]
+/// Message fired when a trap is triggered
+#[derive(Message)]
 pub struct TrapTriggeredEvent {
     pub trap: Entity,
     pub triggered_by: Entity,
 }
 
-/// Event to request resetting a trap (costs bytes)
-#[derive(Event)]
+/// Message to request resetting a trap (costs bytes)
+#[derive(Message)]
 pub struct TrapResetEvent {
     pub trap: Entity,
 }
@@ -96,7 +97,7 @@ fn trap_cooldown_system(
     for mut trap in traps.iter_mut() {
         if trap.on_cooldown {
             trap.cooldown.tick(time.delta());
-            if trap.cooldown.finished() {
+            if trap.cooldown.is_finished() {
                 trap.on_cooldown = false;
             }
         }
@@ -105,7 +106,7 @@ fn trap_cooldown_system(
 
 /// System that handles manual trap resets
 fn trap_reset_system(
-    mut reset_events: EventReader<TrapResetEvent>,
+    mut reset_events: MessageReader<TrapResetEvent>,
     mut traps: Query<&mut Trap>,
     mut resources: ResMut<PlayerResources>,
 ) {

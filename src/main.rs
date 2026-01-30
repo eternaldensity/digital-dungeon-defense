@@ -14,7 +14,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Digital Dungeon Defense".into(),
-                resolution: (1280., 720.).into(),
+                resolution: (1280u32, 720u32).into(),
                 ..default()
             }),
             ..default()

@@ -4,6 +4,7 @@
 //! This is a completely self-contained ability - all logic lives here.
 
 use bevy::prelude::*;
+use bevy::ecs::message::{Message, MessageWriter};
 use ddd_core::{AccumulatedTags, CombatTag, DamageEvent, DamageType, Team};
 
 use crate::{AbilityCooldown, AreaOfEffect, DealsDamage, TargetsEnemies};
@@ -14,7 +15,7 @@ impl Plugin for FireballPlugin {
     fn build(&self, app: &mut App) {
         app
             .register_type::<Fireball>()
-            .add_event::<FireballCastEvent>()
+            .add_message::<FireballCastEvent>()
             .add_systems(Update, (
                 fireball_cooldown_system,
                 fireball_targeting_system,
@@ -71,8 +72,8 @@ impl Default for FireballBundle {
     }
 }
 
-/// Event fired when a fireball is cast
-#[derive(Event)]
+/// Message fired when a fireball is cast
+#[derive(Message)]
 pub struct FireballCastEvent {
     pub caster: Entity,
     pub target_position: Vec3,
@@ -190,7 +191,7 @@ fn fireball_impact_system(
     projectiles: Query<(Entity, &Transform, &FireballProjectile), With<FireballImpact>>,
     targets: Query<(Entity, &Transform, &Team)>,
     casters: Query<&Team>,
-    mut damage_events: EventWriter<DamageEvent>,
+    mut damage_events: MessageWriter<DamageEvent>,
     mut caster_tags: Query<&mut AccumulatedTags>,
 ) {
     for (projectile_entity, projectile_transform, projectile) in projectiles.iter() {
@@ -207,7 +208,7 @@ fn fireball_impact_system(
 
             let distance = projectile_transform.translation.distance(target_transform.translation);
             if distance <= projectile.radius {
-                damage_events.send(DamageEvent {
+                damage_events.write(DamageEvent {
                     target: target_entity,
                     source: Some(projectile.caster),
                     amount: projectile.damage,

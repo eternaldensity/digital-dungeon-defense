@@ -37,10 +37,10 @@ impl Plugin for CorePlugin {
             .register_type::<Lifetime>()
             .register_type::<Team>()
 
-            // Events
-            .add_event::<DamageEvent>()
-            .add_event::<DeathEvent>()
-            .add_event::<ResourceGainEvent>()
+            // Messages (formerly events)
+            .add_message::<DamageEvent>()
+            .add_message::<DeathEvent>()
+            .add_message::<ResourceGainEvent>()
 
             // Core systems
             .add_systems(Update, (

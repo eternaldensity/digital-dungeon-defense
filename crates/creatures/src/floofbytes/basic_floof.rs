@@ -3,6 +3,7 @@
 //! A simple melee creature that attacks nearby enemies.
 
 use bevy::prelude::*;
+use bevy::ecs::message::MessageReader;
 use ddd_core::{
     CombatStats, CreatureExperience, Health, Lifetime, MovementSpeed, OnFloor, Team,
 };
@@ -71,7 +72,7 @@ impl BasicFloofBundle {
 /// Handles spawn events for BasicFloof spawners
 fn basic_floof_spawn_handler(
     mut commands: Commands,
-    mut spawn_events: EventReader<SpawnCreatureEvent>,
+    mut spawn_events: MessageReader<SpawnCreatureEvent>,
     mut spawners: Query<(&mut Spawner, &OnFloor), With<BasicFloofSpawner>>,
 ) {
     for event in spawn_events.read() {

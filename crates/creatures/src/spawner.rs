@@ -4,6 +4,7 @@
 //! Each individual creature maintains its identity and experience across respawns.
 
 use bevy::prelude::*;
+use bevy::ecs::message::{Message, MessageWriter};
 use ddd_core::{CreatureExperience, Team};
 
 pub struct SpawnerPlugin;
@@ -12,7 +13,7 @@ impl Plugin for SpawnerPlugin {
     fn build(&self, app: &mut App) {
         app
             .register_type::<Spawner>()
-            .add_event::<SpawnCreatureEvent>()
+            .add_message::<SpawnCreatureEvent>()
             .add_systems(Update, (
                 spawner_tick_system,
                 respawn_tracking_system,
@@ -71,8 +72,8 @@ pub trait SpawnableCreature: Component + Default {
     fn spawn(commands: &mut Commands, position: Vec3, team: Team) -> Entity;
 }
 
-/// Event to request spawning a specific creature type
-#[derive(Event)]
+/// Message to request spawning a specific creature type
+#[derive(Message)]
 pub struct SpawnCreatureEvent {
     pub spawner: Entity,
     pub position: Vec3,
@@ -95,7 +96,7 @@ pub struct StoredCreatureData {
 pub fn spawner_tick_system(
     mut spawners: Query<(Entity, &mut Spawner, &Transform)>,
     time: Res<Time>,
-    mut spawn_events: EventWriter<SpawnCreatureEvent>,
+    mut spawn_events: MessageWriter<SpawnCreatureEvent>,
 ) {
     for (entity, mut spawner, transform) in spawners.iter_mut() {
         if !spawner.active {
@@ -105,7 +106,7 @@ pub fn spawner_tick_system(
         spawner.spawn_interval.tick(time.delta());
 
         if spawner.spawn_interval.just_finished() && spawner.can_spawn() {
-            spawn_events.send(SpawnCreatureEvent {
+            spawn_events.write(SpawnCreatureEvent {
                 spawner: entity,
                 position: transform.translation,
                 team: Team::Player,
