@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix speed modifier applying every frame (#21)
 
 ### Changed
+- Add 2D menu screen with title and start instructions (#45)
 - Constrain camera pan to current level boundaries (#43)
 - Implement level-based grid sizing (3x3 base, +2 every 2 levels) (#42)
 - Fix grid border lines showing partial tiles (#41)

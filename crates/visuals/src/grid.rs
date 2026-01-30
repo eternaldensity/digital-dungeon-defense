@@ -2,7 +2,7 @@
 
 use bevy::prelude::*;
 use ddd_building::BuildMode;
-use ddd_core::DungeonGrid;
+use ddd_core::{DungeonGrid, GameState};
 use ddd_floors::{FireFloor, FloorTypeMarker, IceFloor};
 use crate::TronPalette;
 
@@ -59,6 +59,7 @@ impl Plugin for GridPlugin {
                 update_active_floor_grids,
                 update_grid_color_for_floor_type,
                 hide_combat_grid_in_build_mode,
+                hide_grid_on_title_screen,
             ).chain());
     }
 }
@@ -252,6 +253,31 @@ fn hide_combat_grid_in_build_mode(
         Visibility::Hidden
     } else {
         Visibility::Visible
+    };
+
+    for mut visibility in floor_query.iter_mut() {
+        *visibility = target_visibility;
+    }
+    for mut visibility in line_query.iter_mut() {
+        *visibility = target_visibility;
+    }
+}
+
+/// Hide grid during Title and GameOver screens
+fn hide_grid_on_title_screen(
+    game_state: Res<State<GameState>>,
+    mut floor_query: Query<&mut Visibility, With<GridFloor>>,
+    mut line_query: Query<&mut Visibility, (With<GridLine>, Without<GridFloor>)>,
+) {
+    if !game_state.is_changed() {
+        return;
+    }
+
+    let should_hide = matches!(*game_state.get(), GameState::Title | GameState::GameOver);
+    let target_visibility = if should_hide {
+        Visibility::Hidden
+    } else {
+        Visibility::Inherited
     };
 
     for mut visibility in floor_query.iter_mut() {

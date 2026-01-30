@@ -91,60 +91,113 @@ impl Plugin for GameFlowPlugin {
 struct TitleScreenUI;
 
 fn setup_title_screen(mut commands: Commands) {
-    // Title text
-    commands.spawn((
-        Text::new("DIGITAL DUNGEON DEFENSE"),
-        TextFont {
-            font_size: 48.0,
-            ..default()
-        },
-        TextColor(Color::srgb(0.2, 0.8, 1.0)),
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Percent(30.0),
-            left: Val::Percent(50.0),
-            ..default()
-        },
-        TitleScreenUI,
-    ));
+    // Root container - full screen centered flex column
+    commands
+        .spawn((
+            TitleScreenUI,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.02, 0.95)),
+        ))
+        .with_children(|parent| {
+            // Title text
+            parent.spawn((
+                Text::new("DIGITAL DUNGEON DEFENSE"),
+                TextFont {
+                    font_size: 56.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.2, 0.8, 1.0)),
+                Node {
+                    margin: UiRect::bottom(Val::Px(40.0)),
+                    ..default()
+                },
+            ));
 
-    // Start prompt
-    commands.spawn((
-        Text::new("Press SPACE to Start Building"),
-        TextFont {
-            font_size: 24.0,
-            ..default()
-        },
-        TextColor(Color::srgb(0.7, 0.7, 0.7)),
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Percent(50.0),
-            left: Val::Percent(50.0),
-            ..default()
-        },
-        TitleScreenUI,
-    ));
+            // Subtitle
+            parent.spawn((
+                Text::new("Build your dungeon to defend against invaders!"),
+                TextFont {
+                    font_size: 20.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
+                Node {
+                    margin: UiRect::bottom(Val::Px(50.0)),
+                    ..default()
+                },
+            ));
 
-    // Instructions
-    commands.spawn((
-        Text::new("Build your dungeon to defend against invaders!\n\nControls:\n  1-7: Select tile\n  Click: Place tile\n  R: Rotate  F: Flip\n  SPACE: Start waves (when valid)"),
-        TextFont {
-            font_size: 16.0,
-            ..default()
-        },
-        TextColor(Color::srgb(0.5, 0.5, 0.5)),
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Percent(60.0),
-            left: Val::Percent(50.0),
-            ..default()
-        },
-        TitleScreenUI,
-    ));
+            // Start prompt (highlighted)
+            parent.spawn((
+                Text::new("[ Press SPACE to Start ]"),
+                TextFont {
+                    font_size: 28.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.9, 0.9, 0.3)),
+                Node {
+                    margin: UiRect::bottom(Val::Px(60.0)),
+                    ..default()
+                },
+            ));
+
+            // Controls section
+            parent
+                .spawn((Node {
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    padding: UiRect::all(Val::Px(20.0)),
+                    ..default()
+                },))
+                .with_children(|controls| {
+                    controls.spawn((
+                        Text::new("Controls"),
+                        TextFont {
+                            font_size: 18.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.5, 0.8, 0.9)),
+                        Node {
+                            margin: UiRect::bottom(Val::Px(15.0)),
+                            ..default()
+                        },
+                    ));
+
+                    let control_lines = [
+                        "1-7: Select tile type",
+                        "Click: Place tile  |  Right-click: Remove",
+                        "R: Rotate  |  F: Flip",
+                        "SPACE: Start waves (when layout is valid)",
+                    ];
+
+                    for line in control_lines {
+                        controls.spawn((
+                            Text::new(line),
+                            TextFont {
+                                font_size: 14.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                            Node {
+                                margin: UiRect::bottom(Val::Px(6.0)),
+                                ..default()
+                            },
+                        ));
+                    }
+                });
+        });
 }
 
 fn cleanup_title_screen(mut commands: Commands, query: Query<Entity, With<TitleScreenUI>>) {
     for entity in query.iter() {
+        commands.entity(entity).despawn_related::<Children>();
         commands.entity(entity).despawn();
     }
 }
@@ -397,60 +450,64 @@ fn setup_game_over_screen(mut commands: Commands, game_over_state: Res<GameOverS
         ("DEFEAT!", Color::srgb(1.0, 0.2, 0.2))
     };
 
-    // Title
-    commands.spawn((
-        Text::new(title),
-        TextFont {
-            font_size: 64.0,
-            ..default()
-        },
-        TextColor(color),
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Percent(30.0),
-            left: Val::Percent(50.0),
-            ..default()
-        },
-        GameOverUI,
-    ));
+    // Root container - full screen centered flex column
+    commands
+        .spawn((
+            GameOverUI,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.02, 0.95)),
+        ))
+        .with_children(|parent| {
+            // Title
+            parent.spawn((
+                Text::new(title),
+                TextFont {
+                    font_size: 72.0,
+                    ..default()
+                },
+                TextColor(color),
+                Node {
+                    margin: UiRect::bottom(Val::Px(30.0)),
+                    ..default()
+                },
+            ));
 
-    // Wave reached
-    commands.spawn((
-        Text::new(format!("Wave {} reached", game_over_state.final_wave + 1)),
-        TextFont {
-            font_size: 24.0,
-            ..default()
-        },
-        TextColor(Color::WHITE),
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Percent(45.0),
-            left: Val::Percent(50.0),
-            ..default()
-        },
-        GameOverUI,
-    ));
+            // Wave reached
+            parent.spawn((
+                Text::new(format!("Wave {} reached", game_over_state.final_wave + 1)),
+                TextFont {
+                    font_size: 24.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+                Node {
+                    margin: UiRect::bottom(Val::Px(40.0)),
+                    ..default()
+                },
+            ));
 
-    // Restart prompt
-    commands.spawn((
-        Text::new("Press SPACE to play again"),
-        TextFont {
-            font_size: 20.0,
-            ..default()
-        },
-        TextColor(Color::srgb(0.7, 0.7, 0.7)),
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Percent(55.0),
-            left: Val::Percent(50.0),
-            ..default()
-        },
-        GameOverUI,
-    ));
+            // Restart prompt
+            parent.spawn((
+                Text::new("[ Press SPACE to play again ]"),
+                TextFont {
+                    font_size: 22.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
+            ));
+        });
 }
 
 fn cleanup_game_over_screen(mut commands: Commands, query: Query<Entity, With<GameOverUI>>) {
     for entity in query.iter() {
+        commands.entity(entity).despawn_related::<Children>();
         commands.entity(entity).despawn();
     }
 }
