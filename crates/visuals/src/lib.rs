@@ -11,10 +11,12 @@ mod palette;
 mod camera;
 mod lighting;
 mod bloom;
-mod grid;
+pub mod grid;
 mod sync;
 mod materials;
 mod meshes;
+mod combat_fx;
+mod resource_fx;
 
 pub use palette::*;
 pub use camera::*;
@@ -24,6 +26,8 @@ pub use grid::*;
 pub use sync::*;
 pub use materials::*;
 pub use meshes::*;
+pub use combat_fx::*;
+pub use resource_fx::*;
 
 use bevy::prelude::*;
 
@@ -41,6 +45,8 @@ impl Plugin for VisualsPlugin {
                 MaterialsPlugin,
                 MeshesPlugin,
                 SyncPlugin,
+                CombatFxPlugin,
+                ResourceFxPlugin,
             ));
     }
 }

@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Add resource collection visuals (#7)
+- Add combat/damage visual feedback (#6)
+- Add multi-floor rendering (#5)
 - Add floor type visual differentiation (#4)
 - Add core pulsing animation (#3)
 - Add spawner visuals (#2)

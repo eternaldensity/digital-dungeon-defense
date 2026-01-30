@@ -1,10 +1,11 @@
 //! Entity synchronization system - converts 2D sprites to 3D meshes
 
 use bevy::prelude::*;
-use ddd_core::{DungeonCore, Team};
+use ddd_core::{DungeonCore, OnFloor, Team};
 use ddd_creatures::Spawner;
 use ddd_traps::{DataSpike, Firewall};
 use crate::{create_tron_material, TronMaterials, TronMeshes, TronPalette};
+use crate::grid::floor_y_position;
 use crate::CREATURE_SCALE;
 
 /// Marker component indicating an entity has been given 3D visuals
@@ -42,7 +43,7 @@ impl Plugin for SyncPlugin {
 /// Converts the dungeon core from sprite to 3D mesh with pulsing animation
 fn sync_dungeon_core(
     mut commands: Commands,
-    query: Query<(Entity, &Transform), (With<DungeonCore>, Without<HasVisuals>)>,
+    query: Query<(Entity, &Transform, Option<&OnFloor>), (With<DungeonCore>, Without<HasVisuals>)>,
     meshes: Option<Res<TronMeshes>>,
     palette: Option<Res<TronPalette>>,
     mut material_assets: ResMut<Assets<StandardMaterial>>,
@@ -53,10 +54,13 @@ fn sync_dungeon_core(
 
     const BASE_INTENSITY: f32 = 4.0;
     const BASE_SCALE: f32 = 24.0;
+    const CORE_HEIGHT_OFFSET: f32 = 6.0; // Height above floor plane
 
-    for (entity, transform) in query.iter() {
-        // Convert XY position to XZ plane (Y becomes height)
-        let pos_3d = Vec3::new(transform.translation.x, 5.0, transform.translation.y);
+    for (entity, transform, on_floor) in query.iter() {
+        // Calculate Y based on floor level
+        let floor_index = on_floor.map(|f| f.0).unwrap_or(0);
+        let base_y = floor_y_position(floor_index);
+        let pos_3d = Vec3::new(transform.translation.x, base_y + CORE_HEIGHT_OFFSET, transform.translation.y);
 
         // Create a unique material instance for this core so we can animate it
         let core_material = material_assets.add(create_tron_material(palette.white_cyan, BASE_INTENSITY));
@@ -81,7 +85,7 @@ fn sync_dungeon_core(
 /// Converts creature entities (with Team component) to 3D meshes
 fn sync_creatures(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, &Team), (With<Sprite>, Without<HasVisuals>)>,
+    query: Query<(Entity, &Transform, &Team, Option<&OnFloor>), (With<Sprite>, Without<HasVisuals>)>,
     materials: Option<Res<TronMaterials>>,
     meshes: Option<Res<TronMeshes>>,
 ) {
@@ -89,9 +93,13 @@ fn sync_creatures(
         return;
     };
 
-    for (entity, transform, team) in query.iter() {
-        // Convert XY position to XZ plane
-        let pos_3d = Vec3::new(transform.translation.x, 2.0, transform.translation.y);
+    const CREATURE_HEIGHT_OFFSET: f32 = 3.0; // Height above floor plane
+
+    for (entity, transform, team, on_floor) in query.iter() {
+        // Calculate Y based on floor level
+        let floor_index = on_floor.map(|f| f.0).unwrap_or(0);
+        let base_y = floor_y_position(floor_index);
+        let pos_3d = Vec3::new(transform.translation.x, base_y + CREATURE_HEIGHT_OFFSET, transform.translation.y);
 
         // Choose material based on team
         let material = match team {
@@ -121,7 +129,7 @@ fn sync_creatures(
 /// Converts firewall traps to 3D orange cuboids
 fn sync_firewalls(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, &Firewall), (With<Sprite>, Without<HasVisuals>)>,
+    query: Query<(Entity, &Transform, &Firewall, Option<&OnFloor>), (With<Sprite>, Without<HasVisuals>)>,
     materials: Option<Res<TronMaterials>>,
     meshes: Option<Res<TronMeshes>>,
 ) {
@@ -129,9 +137,13 @@ fn sync_firewalls(
         return;
     };
 
-    for (entity, transform, firewall) in query.iter() {
-        // Convert XY position to XZ plane, firewall sits on the ground
-        let pos_3d = Vec3::new(transform.translation.x, 4.0, transform.translation.y);
+    const FIREWALL_HEIGHT_OFFSET: f32 = 5.0; // Height above floor plane
+
+    for (entity, transform, firewall, on_floor) in query.iter() {
+        // Calculate Y based on floor level
+        let floor_index = on_floor.map(|f| f.0).unwrap_or(0);
+        let base_y = floor_y_position(floor_index);
+        let pos_3d = Vec3::new(transform.translation.x, base_y + FIREWALL_HEIGHT_OFFSET, transform.translation.y);
 
         // Scale based on firewall width
         let scale = Vec3::new(firewall.width / 2.0, 8.0, 4.0);
@@ -150,7 +162,7 @@ fn sync_firewalls(
 /// Converts data spike traps to 3D magenta cones
 fn sync_data_spikes(
     mut commands: Commands,
-    query: Query<(Entity, &Transform), (With<DataSpike>, With<Sprite>, Without<HasVisuals>)>,
+    query: Query<(Entity, &Transform, Option<&OnFloor>), (With<DataSpike>, With<Sprite>, Without<HasVisuals>)>,
     materials: Option<Res<TronMaterials>>,
     meshes: Option<Res<TronMeshes>>,
 ) {
@@ -158,9 +170,13 @@ fn sync_data_spikes(
         return;
     };
 
-    for (entity, transform) in query.iter() {
-        // Convert XY position to XZ plane, spike points upward from ground
-        let pos_3d = Vec3::new(transform.translation.x, 0.0, transform.translation.y);
+    const SPIKE_HEIGHT_OFFSET: f32 = 1.0; // Slightly above floor plane
+
+    for (entity, transform, on_floor) in query.iter() {
+        // Calculate Y based on floor level
+        let floor_index = on_floor.map(|f| f.0).unwrap_or(0);
+        let base_y = floor_y_position(floor_index);
+        let pos_3d = Vec3::new(transform.translation.x, base_y + SPIKE_HEIGHT_OFFSET, transform.translation.y);
 
         // Scale for visible spike
         let scale = Vec3::splat(12.0);
@@ -180,7 +196,7 @@ fn sync_data_spikes(
 /// Player spawners are cyan, enemy spawners are orange-red
 fn sync_spawners(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, Option<&Team>), (With<Spawner>, With<Sprite>, Without<HasVisuals>)>,
+    query: Query<(Entity, &Transform, Option<&Team>, Option<&OnFloor>), (With<Spawner>, With<Sprite>, Without<HasVisuals>)>,
     materials: Option<Res<TronMaterials>>,
     meshes: Option<Res<TronMeshes>>,
 ) {
@@ -188,9 +204,13 @@ fn sync_spawners(
         return;
     };
 
-    for (entity, transform, team) in query.iter() {
-        // Convert XY position to XZ plane, spawner sits on ground
-        let pos_3d = Vec3::new(transform.translation.x, 0.0, transform.translation.y);
+    const SPAWNER_HEIGHT_OFFSET: f32 = 1.0; // Slightly above floor plane
+
+    for (entity, transform, team, on_floor) in query.iter() {
+        // Calculate Y based on floor level
+        let floor_index = on_floor.map(|f| f.0).unwrap_or(0);
+        let base_y = floor_y_position(floor_index);
+        let pos_3d = Vec3::new(transform.translation.x, base_y + SPAWNER_HEIGHT_OFFSET, transform.translation.y);
 
         // Choose material based on team (default to player/cyan if no team)
         let material = match team {
