@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Add mousewheel zoom control for camera (#38)
+- Add arrow key controls to pan camera target location (#37)
 - Convert rendering from 2D sprites to 3D meshes (#30)
 - Design and implement integrated gameplay loop with title screen and building mode (#28)
 - Design building mode and tile-based floor planning UI (#24)
