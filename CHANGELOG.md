@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Add tile selection menu overlay with arrow key/WASD navigation (#54)
 - Add T-shaped and C-shaped corridor tiles for connecting central and side door tiles (#53)
 - Add side corridor tile with outer door positions (#48)
 - Add WASD and numpad controls for camera panning and tile selection (#44)
@@ -36,6 +37,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix speed modifier applying every frame (#21)
 
 ### Changed
+- Disable tile placement while tile selection menu is open (#56)
+- Remove number key shortcuts for tile selection and disable camera controls during menu (#55)
 - Add 2D menu screen with title and start instructions (#45)
 - Constrain camera pan to current level boundaries (#43)
 - Implement level-based grid sizing (3x3 base, +2 every 2 levels) (#42)

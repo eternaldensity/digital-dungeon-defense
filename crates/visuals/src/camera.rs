@@ -119,7 +119,13 @@ fn handle_camera_pan_input(
     settings: Res<CameraSettings>,
     mut state: ResMut<CameraState>,
     time: Res<Time>,
+    build_mode: Res<State<BuildMode>>,
 ) {
+    // Disable camera pan when tile menu is open
+    if *build_mode.get() == BuildMode::TileSelect {
+        return;
+    }
+
     let mut direction = Vec3::ZERO;
 
     if keyboard.pressed(KeyCode::ArrowUp) || keyboard.pressed(KeyCode::KeyW) {
@@ -146,7 +152,13 @@ fn handle_camera_zoom_input(
     mut scroll_events: MessageReader<MouseWheel>,
     settings: Res<CameraSettings>,
     mut state: ResMut<CameraState>,
+    build_mode: Res<State<BuildMode>>,
 ) {
+    // Disable camera zoom when tile menu is open
+    if *build_mode.get() == BuildMode::TileSelect {
+        return;
+    }
+
     for event in scroll_events.read() {
         state.target_distance -= event.y * settings.zoom_speed;
         state.target_distance = state.target_distance.clamp(settings.min_distance, settings.max_distance);

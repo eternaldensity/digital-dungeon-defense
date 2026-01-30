@@ -21,6 +21,7 @@
 
 pub mod input;
 pub mod layout;
+pub mod tile_menu;
 pub mod tiles;
 pub mod validation;
 
@@ -28,6 +29,7 @@ pub use input::{
     planning_grid_to_world, world_to_planning_grid, BuildInputPlugin, BuildModeChangedEvent,
     TilePlacedEvent, TileRemovedEvent, PLANNING_TILE_WORLD_SIZE,
 };
+pub use tile_menu::{TileMenuPlugin, TileMenuState};
 pub use layout::{
     grid_bounds_for_floor, grid_size_for_floor, is_within_bounds, world_bounds_for_floor,
     BuildMode, BuildModeState, DungeonLayout, FloorLayout, ValidationError, BASE_GRID_SIZE,
@@ -51,6 +53,6 @@ impl Plugin for BuildingPlugin {
         app.init_state::<BuildMode>()
             .init_resource::<DungeonLayout>()
             .init_resource::<BuildModeState>()
-            .add_plugins(BuildInputPlugin);
+            .add_plugins((BuildInputPlugin, TileMenuPlugin));
     }
 }

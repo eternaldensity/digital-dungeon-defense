@@ -2,17 +2,17 @@
 //!
 //! Handles keyboard and mouse input during the building phase:
 //! - B: Toggle build mode
+//! - T: Open tile selection menu
 //! - R: Rotate selected tile
 //! - F: Flip selected tile
 //! - Left click: Place tile / select tile
 //! - Right click: Remove tile / cancel selection
 //! - Space/Enter: Exit build mode and start wave
-//! - 1-7: Select tile template directly
 //! - Tab: Cycle through floors
 
 use crate::{
     can_place_tile, validate_dungeon, BuildMode, BuildModeState, DungeonLayout, PlacedTile,
-    TileOrientation, TileTemplateId, PLANNING_TILE_SIZE,
+    TileTemplateId, PLANNING_TILE_SIZE,
 };
 use bevy::ecs::message::{Message, MessageWriter};
 use bevy::prelude::*;
@@ -90,50 +90,18 @@ fn toggle_build_mode(
     }
 }
 
-/// Handle direct tile template selection with number keys and numpad.
+/// Handle Escape to deselect current tile.
 fn handle_tile_selection(
     keyboard: Res<ButtonInput<KeyCode>>,
     current_state: Res<State<BuildMode>>,
     mut build_state: ResMut<BuildModeState>,
     mut next_mode: ResMut<NextState<BuildMode>>,
-    layout: Res<DungeonLayout>,
 ) {
-    // Only run in build mode
-    if *current_state.get() == BuildMode::Disabled {
+    // Only run in build mode, skip if menu is open
+    if *current_state.get() == BuildMode::Disabled
+        || *current_state.get() == BuildMode::TileSelect
+    {
         return;
-    }
-
-    // Map both number row and numpad keys to templates
-    let key_to_template = [
-        // Number row
-        (KeyCode::Digit1, TileTemplateId(1)), // Basic Room
-        (KeyCode::Digit2, TileTemplateId(2)), // Corridor
-        (KeyCode::Digit3, TileTemplateId(3)), // Core Chamber
-        (KeyCode::Digit4, TileTemplateId(4)), // Stairwell
-        (KeyCode::Digit5, TileTemplateId(5)), // L-Room
-        (KeyCode::Digit6, TileTemplateId(6)), // T-Junction
-        (KeyCode::Digit7, TileTemplateId(7)), // Corner
-        (KeyCode::Digit8, TileTemplateId(8)), // Side Corridor
-        // Numpad
-        (KeyCode::Numpad1, TileTemplateId(1)),
-        (KeyCode::Numpad2, TileTemplateId(2)),
-        (KeyCode::Numpad3, TileTemplateId(3)),
-        (KeyCode::Numpad4, TileTemplateId(4)),
-        (KeyCode::Numpad5, TileTemplateId(5)),
-        (KeyCode::Numpad6, TileTemplateId(6)),
-        (KeyCode::Numpad7, TileTemplateId(7)),
-        (KeyCode::Numpad8, TileTemplateId(8)),
-    ];
-
-    for (key, template_id) in key_to_template {
-        if keyboard.just_pressed(key) {
-            // Verify template exists
-            if layout.get_template(template_id).is_some() {
-                build_state.selected_template = Some(template_id);
-                build_state.current_orientation = TileOrientation::default();
-                next_mode.set(BuildMode::TilePlace);
-            }
-        }
     }
 
     // Escape to deselect
@@ -173,8 +141,10 @@ fn handle_tile_placement(
     mut layout: ResMut<DungeonLayout>,
     mut events: MessageWriter<TilePlacedEvent>,
 ) {
-    // Only run in build mode
-    if *current_state.get() == BuildMode::Disabled {
+    // Only run in build mode, skip if menu is open
+    if *current_state.get() == BuildMode::Disabled
+        || *current_state.get() == BuildMode::TileSelect
+    {
         return;
     }
 
@@ -243,8 +213,10 @@ fn handle_tile_removal(
     mut layout: ResMut<DungeonLayout>,
     mut events: MessageWriter<TileRemovedEvent>,
 ) {
-    // Only run in build mode
-    if *current_state.get() == BuildMode::Disabled {
+    // Only run in build mode, skip if menu is open
+    if *current_state.get() == BuildMode::Disabled
+        || *current_state.get() == BuildMode::TileSelect
+    {
         return;
     }
 

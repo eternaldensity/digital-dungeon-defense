@@ -171,7 +171,7 @@ fn setup_title_screen(mut commands: Commands) {
                     ));
 
                     let control_lines = [
-                        "1-8: Select tile type",
+                        "T: Open tile menu",
                         "Click: Place tile  |  Right-click: Remove",
                         "R: Rotate  |  F: Flip",
                         "SPACE: Start waves (when layout is valid)",
@@ -218,7 +218,7 @@ fn setup_building_ui(
 
     // Building mode instructions
     commands.spawn((
-        Text::new("BUILDING MODE\n\n1-7: Select tile type\nClick: Place tile\nRight-click: Remove tile\nR: Rotate  F: Flip\nSPACE: Start waves (when valid)"),
+        Text::new("BUILDING MODE\n\nT: Open tile menu\nClick: Place tile\nRight-click: Remove tile\nR: Rotate  F: Flip\nSPACE: Start waves (when valid)"),
         TextFont {
             font_size: 16.0,
             ..default()
@@ -233,22 +233,6 @@ fn setup_building_ui(
         BuildingUI,
     ));
 
-    // Tile legend
-    commands.spawn((
-        Text::new("Tiles:\n1: Basic Room\n2: Corridor\n3: Core Chamber\n4: Stairwell\n5: L-Room\n6: T-Junction\n7: Corner\n8: Side Corridor"),
-        TextFont {
-            font_size: 14.0,
-            ..default()
-        },
-        TextColor(Color::srgb(0.6, 0.6, 0.6)),
-        Node {
-            position_type: PositionType::Absolute,
-            bottom: Val::Px(10.0),
-            right: Val::Px(10.0),
-            ..default()
-        },
-        BuildingUI,
-    ));
 }
 
 fn cleanup_building_ui(mut commands: Commands, query: Query<Entity, With<BuildingUI>>) {
