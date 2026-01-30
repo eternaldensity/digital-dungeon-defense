@@ -1,10 +1,10 @@
 //! Combat-related components and systems
 
 use bevy::prelude::*;
-use bevy::ecs::message::MessageReader;
+use bevy::ecs::message::{MessageReader, MessageWriter};
 use std::collections::HashMap;
 
-use crate::{DamageEvent, PlayerResources, Team};
+use crate::{DamageEvent, DamageType, Health, PlayerResources, Team};
 
 /// Combat statistics for creatures
 #[derive(Component, Reflect, Default)]
@@ -148,6 +148,81 @@ pub fn collect_floof_system(
                 let floof_amount = event.amount * 0.1;
                 resources.add_floof(floof_amount);
             }
+        }
+    }
+}
+
+/// Cooldown timer for auto-attacks
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct AttackCooldown {
+    pub timer: Timer,
+}
+
+impl AttackCooldown {
+    pub fn new(attack_speed: f32) -> Self {
+        let cooldown_secs = if attack_speed > 0.0 {
+            1.0 / attack_speed
+        } else {
+            1.0
+        };
+        Self {
+            timer: Timer::from_seconds(cooldown_secs, TimerMode::Once),
+        }
+    }
+
+    pub fn ready(&self) -> bool {
+        self.timer.is_finished()
+    }
+
+    pub fn reset(&mut self) {
+        self.timer.reset();
+    }
+}
+
+/// Auto-attack system - creatures attack enemies in range when cooldown is ready
+pub fn auto_attack_system(
+    mut attackers: Query<(Entity, &Transform, &CombatStats, &Team, &mut AttackCooldown)>,
+    targets: Query<(Entity, &Transform, &Team), With<Health>>,
+    mut damage_events: MessageWriter<DamageEvent>,
+    time: Res<Time>,
+) {
+    for (attacker_entity, attacker_transform, combat_stats, attacker_team, mut cooldown) in attackers.iter_mut() {
+        cooldown.timer.tick(time.delta());
+
+        if !cooldown.ready() {
+            continue;
+        }
+
+        // Find nearest enemy in range
+        let mut best_target: Option<Entity> = None;
+        let mut best_distance = f32::MAX;
+
+        for (target_entity, target_transform, target_team) in targets.iter() {
+            // Skip same team
+            if attacker_team == target_team {
+                continue;
+            }
+
+            let distance = attacker_transform
+                .translation
+                .distance(target_transform.translation);
+
+            if distance <= combat_stats.attack_range && distance < best_distance {
+                best_distance = distance;
+                best_target = Some(target_entity);
+            }
+        }
+
+        // Attack if we found a target
+        if let Some(target) = best_target {
+            damage_events.write(DamageEvent {
+                target,
+                source: Some(attacker_entity),
+                amount: combat_stats.attack,
+                damage_type: DamageType::Physical,
+            });
+            cooldown.reset();
         }
     }
 }

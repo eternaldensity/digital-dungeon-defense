@@ -1,8 +1,11 @@
 //! Demo scene for testing the game systems
 
 use bevy::prelude::*;
-use ddd_core::{DungeonGrid, PlayerResources};
-use ddd_creatures::{BasicFloofSpawnerBundle, VirusBundle};
+use bevy::ecs::message::MessageReader;
+use ddd_core::{
+    DeathEvent, PlayerResources, SpawnWaveEnemyEvent, WavePhase, WaveState,
+};
+use ddd_creatures::{BasicFloofSpawnerBundle, Virus, VirusBundle};
 use ddd_traps::{DataSpikeBundle, FirewallBundle};
 
 pub struct DemoPlugin;
@@ -12,36 +15,15 @@ impl Plugin for DemoPlugin {
         app
             .add_systems(Startup, setup_demo_scene)
             .add_systems(Update, (
-                spawn_enemy_waves,
+                handle_wave_enemy_spawns,
+                track_enemy_deaths,
                 display_resources,
             ));
     }
 }
 
-/// Wave spawner state
-#[derive(Resource)]
-struct WaveState {
-    timer: Timer,
-    wave_number: u32,
-}
-
-impl Default for WaveState {
-    fn default() -> Self {
-        Self {
-            timer: Timer::from_seconds(10.0, TimerMode::Repeating),
-            wave_number: 0,
-        }
-    }
-}
-
 /// Sets up a demo scene with spawners, traps, and enemies
-fn setup_demo_scene(
-    mut commands: Commands,
-    dungeon: Res<DungeonGrid>,
-) {
-    // Initialize wave state
-    commands.insert_resource(WaveState::default());
-
+fn setup_demo_scene(mut commands: Commands) {
     // Spawn some FloofByte spawners
     commands.spawn(BasicFloofSpawnerBundle::new(
         Vec3::new(-100.0, 50.0, 0.0),
@@ -69,18 +51,7 @@ fn setup_demo_scene(
         0,
     ));
 
-    // Spawn initial enemies at the edge
-    let spawn_positions = vec![
-        Vec3::new(300.0, 100.0, 0.0),
-        Vec3::new(300.0, 0.0, 0.0),
-        Vec3::new(300.0, -100.0, 0.0),
-    ];
-
-    for pos in spawn_positions {
-        commands.spawn(VirusBundle::new(pos, 0));
-    }
-
-    // Add UI text for resources
+    // Add UI text for resources and wave info
     commands.spawn((
         Text::new("Resources: "),
         TextFont {
@@ -95,6 +66,23 @@ fn setup_demo_scene(
             ..default()
         },
         ResourceText,
+    ));
+
+    // Add wave status text
+    commands.spawn((
+        Text::new("Wave: "),
+        TextFont {
+            font_size: 20.0,
+            ..default()
+        },
+        TextColor(Color::srgb(1.0, 0.8, 0.2)),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(35.0),
+            left: Val::Px(10.0),
+            ..default()
+        },
+        WaveText,
     ));
 
     // Add instructions
@@ -118,36 +106,42 @@ fn setup_demo_scene(
 #[derive(Component)]
 struct ResourceText;
 
-/// Spawns waves of enemies periodically
-fn spawn_enemy_waves(
+/// Marker for wave status text
+#[derive(Component)]
+struct WaveText;
+
+/// Handles spawning enemies from wave events
+fn handle_wave_enemy_spawns(
     mut commands: Commands,
-    mut wave_state: ResMut<WaveState>,
-    time: Res<Time>,
+    mut spawn_events: MessageReader<SpawnWaveEnemyEvent>,
 ) {
-    wave_state.timer.tick(time.delta());
+    for event in spawn_events.read() {
+        commands.spawn(VirusBundle::new(event.position, event.floor));
+    }
+}
 
-    if wave_state.timer.just_finished() {
-        wave_state.wave_number += 1;
-
-        // Spawn more enemies each wave
-        let enemy_count = 2 + wave_state.wave_number;
-
-        for i in 0..enemy_count {
-            let y_offset = (i as f32 - enemy_count as f32 / 2.0) * 40.0;
-            commands.spawn(VirusBundle::new(
-                Vec3::new(350.0, y_offset, 0.0),
-                0,
-            ));
+/// Tracks enemy deaths to update wave state
+fn track_enemy_deaths(
+    mut death_events: MessageReader<DeathEvent>,
+    mut wave_state: ResMut<WaveState>,
+    enemies: Query<&Virus>,
+) {
+    for event in death_events.read() {
+        // Check if the dead entity was an enemy
+        if enemies.get(event.entity).is_ok() {
+            wave_state.enemy_died();
         }
     }
 }
 
-/// Updates the resource display
+/// Updates the resource and wave display
 fn display_resources(
     resources: Res<PlayerResources>,
-    mut query: Query<&mut Text, With<ResourceText>>,
+    wave_state: Res<WaveState>,
+    mut resource_query: Query<&mut Text, (With<ResourceText>, Without<WaveText>)>,
+    mut wave_query: Query<&mut Text, (With<WaveText>, Without<ResourceText>)>,
 ) {
-    for mut text in query.iter_mut() {
+    for mut text in resource_query.iter_mut() {
         **text = format!(
             "Bytes: {:.0}/{:.0} | Floof: {:.0} | Chips: {} | Core Lvl: {}",
             resources.bytes,
@@ -155,6 +149,23 @@ fn display_resources(
             resources.floof,
             resources.chips,
             resources.core_level,
+        );
+    }
+
+    for mut text in wave_query.iter_mut() {
+        let phase_str = match wave_state.phase {
+            WavePhase::Preparing => "Preparing...",
+            WavePhase::Active => "Active",
+            WavePhase::Complete => "Complete!",
+            WavePhase::GameOver => "GAME OVER",
+            WavePhase::Victory => "VICTORY!",
+        };
+
+        **text = format!(
+            "Wave {} | {} | Enemies: {}",
+            wave_state.current_wave + 1,
+            phase_str,
+            wave_state.enemies_alive,
         );
     }
 }

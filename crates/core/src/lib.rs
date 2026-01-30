@@ -12,12 +12,14 @@ mod health;
 mod combat;
 mod dungeon;
 mod pathfinding;
+mod waves;
 
 pub use resources::*;
 pub use health::*;
 pub use combat::*;
 pub use dungeon::*;
 pub use pathfinding::*;
+pub use waves::*;
 
 use bevy::prelude::*;
 
@@ -41,6 +43,16 @@ impl Plugin for CorePlugin {
             .add_message::<DamageEvent>()
             .add_message::<DeathEvent>()
             .add_message::<ResourceGainEvent>()
+            .add_message::<WaveStartEvent>()
+            .add_message::<WaveCompleteEvent>()
+            .add_message::<SpawnWaveEnemyEvent>()
+            .add_message::<GameOverEvent>()
+
+            // Wave state resource
+            .init_resource::<WaveState>()
+
+            // Register combat types
+            .register_type::<AttackCooldown>()
 
             // Core systems
             .add_systems(Update, (
@@ -49,6 +61,10 @@ impl Plugin for CorePlugin {
                 lifetime_system,
                 collect_floof_system,
                 passive_byte_generation_system,
+                auto_attack_system,
+                wave_state_system,
+                wave_spawn_system,
+                core_death_system,
             ).chain())
 
             // Startup

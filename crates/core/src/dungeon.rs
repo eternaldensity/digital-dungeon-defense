@@ -2,6 +2,8 @@
 
 use bevy::prelude::*;
 
+use crate::Health;
+
 /// Grid-based dungeon representation
 #[derive(Resource)]
 pub struct DungeonGrid {
@@ -147,6 +149,8 @@ pub fn setup_dungeon(
 
     commands.spawn((
         DungeonCore,
+        Health::new(100.0),
+        Team::Player,
         core_pos,
         OnFloor(0),
         Transform::from_xyz(world_pos.x, world_pos.y, 0.0),

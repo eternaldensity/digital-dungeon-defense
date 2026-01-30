@@ -4,7 +4,7 @@
 
 use bevy::prelude::*;
 use ddd_core::{
-    CombatStats, DungeonCore, DungeonGrid, GridPosition, Health,
+    AttackCooldown, CombatStats, DungeonCore, DungeonGrid, GridPosition, Health,
     MovementSpeed, OnFloor, PathAgent, Team, find_path,
 };
 
@@ -33,6 +33,7 @@ pub struct VirusBundle {
     pub health: Health,
     pub speed: MovementSpeed,
     pub combat_stats: CombatStats,
+    pub attack_cooldown: AttackCooldown,
     pub team: Team,
     pub on_floor: OnFloor,
     pub path_agent: PathAgent,
@@ -42,6 +43,7 @@ pub struct VirusBundle {
 
 impl VirusBundle {
     pub fn new(position: Vec3, floor: usize) -> Self {
+        let attack_speed = 1.2;
         Self {
             marker: Virus,
             health: Health::new(30.0),
@@ -49,9 +51,10 @@ impl VirusBundle {
             combat_stats: CombatStats {
                 attack: 8.0,
                 defense: 2.0,
-                attack_speed: 1.2,
+                attack_speed,
                 attack_range: 30.0,
             },
+            attack_cooldown: AttackCooldown::new(attack_speed),
             team: Team::Enemy,
             on_floor: OnFloor(floor),
             path_agent: PathAgent::new(),

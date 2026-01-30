@@ -5,7 +5,7 @@
 use bevy::prelude::*;
 use bevy::ecs::message::MessageReader;
 use ddd_core::{
-    CombatStats, CreatureExperience, Health, Lifetime, MovementSpeed, OnFloor, Team,
+    AttackCooldown, CombatStats, CreatureExperience, Health, Lifetime, MovementSpeed, OnFloor, Team,
 };
 
 use crate::{SpawnCreatureEvent, SpawnedBy, Spawner};
@@ -35,6 +35,7 @@ pub struct BasicFloofBundle {
     pub health: Health,
     pub speed: MovementSpeed,
     pub combat_stats: CombatStats,
+    pub attack_cooldown: AttackCooldown,
     pub experience: CreatureExperience,
     pub lifetime: Lifetime,
     pub team: Team,
@@ -45,6 +46,7 @@ pub struct BasicFloofBundle {
 
 impl BasicFloofBundle {
     pub fn new(position: Vec3, floor: usize) -> Self {
+        let attack_speed = 1.0;
         Self {
             marker: BasicFloof,
             health: Health::new(50.0),
@@ -52,9 +54,10 @@ impl BasicFloofBundle {
             combat_stats: CombatStats {
                 attack: 10.0,
                 defense: 5.0,
-                attack_speed: 1.0,
+                attack_speed,
                 attack_range: 40.0,
             },
+            attack_cooldown: AttackCooldown::new(attack_speed),
             experience: CreatureExperience::default(),
             lifetime: Lifetime::new(120.0), // 2 minute lifespan
             team: Team::Player,
