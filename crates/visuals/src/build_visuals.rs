@@ -10,8 +10,8 @@
 
 use bevy::prelude::*;
 use ddd_building::{
-    planning_grid_to_world, BuildMode, BuildModeState, DungeonLayout, PlacedTile, SlotType,
-    TileOrientation, TileSide, PLANNING_TILE_WORLD_SIZE,
+    grid_bounds_for_floor, planning_grid_to_world, BuildMode, BuildModeState, DungeonLayout,
+    PlacedTile, SlotType, TileOrientation, TileSide, PLANNING_TILE_WORLD_SIZE,
 };
 
 use crate::{floor_y_position, TronPalette};
@@ -88,16 +88,26 @@ fn spawn_planning_grid_on_build_mode(
         return;
     }
 
-    let floor_y = floor_y_position(build_state.active_floor) + 0.1;
+    let floor_index = build_state.active_floor;
+    let floor_y = floor_y_position(floor_index) + 0.1;
 
-    // Create planning grid lines (larger spacing than combat grid)
-    let grid_extent = 5; // Show +/- 5 planning tiles
-    let line_length = (grid_extent * 2 + 1) as f32 * PLANNING_TILE_WORLD_SIZE;
+    // Get grid bounds for this floor level
+    let (grid_min, grid_max) = grid_bounds_for_floor(floor_index);
+
+    // Calculate grid dimensions in world units
+    // Grid lines go at tile boundaries, so we need (grid_size + 1) lines
+    let grid_width = (grid_max.x - grid_min.x + 1) as f32 * PLANNING_TILE_WORLD_SIZE;
+    let grid_height = (grid_max.y - grid_min.y + 1) as f32 * PLANNING_TILE_WORLD_SIZE;
+
+    // Calculate center offset (grid is centered around origin)
+    let center_x = (grid_min.x as f32 + grid_max.x as f32 + 1.0) / 2.0 * PLANNING_TILE_WORLD_SIZE;
+    let center_z = (grid_min.y as f32 + grid_max.y as f32 + 1.0) / 2.0 * PLANNING_TILE_WORLD_SIZE;
+
     let line_thickness = 2.0;
     let line_height = 0.3;
 
-    let h_line = meshes.add(Cuboid::new(line_length, line_height, line_thickness));
-    let v_line = meshes.add(Cuboid::new(line_thickness, line_height, line_length));
+    let h_line = meshes.add(Cuboid::new(grid_width, line_height, line_thickness));
+    let v_line = meshes.add(Cuboid::new(line_thickness, line_height, grid_height));
 
     let line_material = materials.add(StandardMaterial {
         base_color: palette.cyan.with_alpha(0.4),
@@ -107,25 +117,25 @@ fn spawn_planning_grid_on_build_mode(
         ..default()
     });
 
-    // Spawn horizontal lines
-    for i in -grid_extent..=grid_extent {
+    // Spawn horizontal lines at tile boundaries
+    for i in grid_min.y..=(grid_max.y + 1) {
         let z = i as f32 * PLANNING_TILE_WORLD_SIZE;
         commands.spawn((
             PlanningGridOverlay,
             Mesh3d(h_line.clone()),
             MeshMaterial3d(line_material.clone()),
-            Transform::from_xyz(0.0, floor_y, z),
+            Transform::from_xyz(center_x, floor_y, z),
         ));
     }
 
-    // Spawn vertical lines
-    for i in -grid_extent..=grid_extent {
+    // Spawn vertical lines at tile boundaries
+    for i in grid_min.x..=(grid_max.x + 1) {
         let x = i as f32 * PLANNING_TILE_WORLD_SIZE;
         commands.spawn((
             PlanningGridOverlay,
             Mesh3d(v_line.clone()),
             MeshMaterial3d(line_material.clone()),
-            Transform::from_xyz(x, floor_y, 0.0),
+            Transform::from_xyz(x, floor_y, center_z),
         ));
     }
 }

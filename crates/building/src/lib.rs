@@ -28,7 +28,11 @@ pub use input::{
     planning_grid_to_world, world_to_planning_grid, BuildInputPlugin, BuildModeChangedEvent,
     TilePlacedEvent, TileRemovedEvent, PLANNING_TILE_WORLD_SIZE,
 };
-pub use layout::{BuildMode, BuildModeState, DungeonLayout, FloorLayout, ValidationError};
+pub use layout::{
+    grid_bounds_for_floor, grid_size_for_floor, is_within_bounds, world_bounds_for_floor,
+    BuildMode, BuildModeState, DungeonLayout, FloorLayout, ValidationError, BASE_GRID_SIZE,
+    SIZE_INCREASE_AMOUNT, SIZE_INCREASE_INTERVAL,
+};
 pub use tiles::{
     ConnectivityNode, ConstructionSlot, DoorId, DoorPosition, PlacedFeature, PlacedTile,
     SlotType, TileOrientation, TileSide, TileTemplate, TileTemplateId, PLANNING_TILE_SIZE,

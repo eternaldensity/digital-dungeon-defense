@@ -7,6 +7,7 @@
 use bevy::ecs::message::MessageReader;
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
+use ddd_building::{world_bounds_for_floor, BuildMode, BuildModeState};
 
 /// Marker component for the main game camera
 #[derive(Component)]
@@ -86,6 +87,7 @@ impl Plugin for CameraPlugin {
             .add_systems(Update, (
                 handle_camera_pan_input,
                 handle_camera_zoom_input,
+                clamp_camera_to_bounds,
                 update_camera_smooth,
             ).chain());
     }
@@ -149,6 +151,30 @@ fn handle_camera_zoom_input(
         state.target_distance -= event.y * settings.zoom_speed;
         state.target_distance = state.target_distance.clamp(settings.min_distance, settings.max_distance);
     }
+}
+
+/// Clamp camera target to the current floor's boundaries
+fn clamp_camera_to_bounds(
+    mut state: ResMut<CameraState>,
+    build_mode: Res<State<BuildMode>>,
+    build_state: Option<Res<BuildModeState>>,
+) {
+    // Determine the active floor index
+    let floor_index = if *build_mode.get() != BuildMode::Disabled {
+        build_state.map(|s| s.active_floor).unwrap_or(0)
+    } else {
+        // In combat mode, default to floor 0 for now
+        // Could be extended to track combat floor
+        0
+    };
+
+    // Get world bounds for this floor
+    let (world_min, world_max) = world_bounds_for_floor(floor_index);
+
+    // Clamp the target look-at position to within bounds
+    // Use X for world X, Z for world Z (Y is vertical)
+    state.target_look_at.x = state.target_look_at.x.clamp(world_min.x, world_max.x);
+    state.target_look_at.z = state.target_look_at.z.clamp(world_min.y, world_max.y);
 }
 
 /// Smoothly interpolate camera position toward target

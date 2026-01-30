@@ -75,6 +75,11 @@ pub fn can_place_tile(
     template_id: TileTemplateId,
     orientation: crate::tiles::TileOrientation,
 ) -> bool {
+    // Can't place if outside the grid bounds for this floor
+    if !crate::layout::is_within_bounds(position, floor.floor_index) {
+        return false;
+    }
+
     // Can't place if there's already a tile
     if floor.has_tile(position) {
         return false;
