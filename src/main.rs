@@ -5,6 +5,7 @@ use ddd_creatures::CreaturesPlugin;
 use ddd_abilities::AbilitiesPlugin;
 use ddd_floors::FloorsPlugin;
 use ddd_traps::TrapsPlugin;
+use ddd_visuals::VisualsPlugin;
 
 mod demo;
 use demo::DemoPlugin;
@@ -26,16 +27,9 @@ fn main() {
             AbilitiesPlugin,
             FloorsPlugin,
             TrapsPlugin,
+            VisualsPlugin,
         ))
         // Demo scene
         .add_plugins(DemoPlugin)
-        .add_systems(Startup, setup_camera)
         .run();
-}
-
-fn setup_camera(mut commands: Commands) {
-    commands.spawn((
-        Camera2d,
-        Transform::from_xyz(0.0, 0.0, 100.0),
-    ));
 }

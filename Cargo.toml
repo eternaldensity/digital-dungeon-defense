@@ -6,6 +6,7 @@ members = [
     "crates/abilities",
     "crates/floors",
     "crates/traps",
+    "crates/visuals",
 ]
 
 [workspace.package]
@@ -25,6 +26,7 @@ ddd_creatures = { path = "crates/creatures" }
 ddd_abilities = { path = "crates/abilities" }
 ddd_floors = { path = "crates/floors" }
 ddd_traps = { path = "crates/traps" }
+ddd_visuals = { path = "crates/visuals" }
 
 [package]
 name = "digital-dungeon-defense"
@@ -39,3 +41,4 @@ ddd_creatures.workspace = true
 ddd_abilities.workspace = true
 ddd_floors.workspace = true
 ddd_traps.workspace = true
+ddd_visuals.workspace = true
