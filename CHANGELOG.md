@@ -29,6 +29,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add trap visuals (Firewall, DataSpike) (#1)
 
 ### Fixed
+- Fix T-connector center door back to North and restore pattern (#63)
+- Fix T-connector orientation - crossbar at north, stem going south (#62)
+- Fix T-connector to be right-side up with doors on crossbar sides (#61)
+- Fix C-connector left spine to columns 0-2 and remove corner squares (#60)
+- Fix C-connector spine to be on left side connecting the two arms (#59)
+- Fix C-connector pattern to trace full C shape around perimeter (#58)
+- Fix C-connector walkable pattern to have correct C shape (#57)
 - Fix tile door positions to remain aligned with walkable pattern during rotation and flip (#50)
 - Fix L-Room and Side Corridor door positions to match walkable patterns (#49)
 - Fix L-Room tile door position to match walkable pattern (#47)

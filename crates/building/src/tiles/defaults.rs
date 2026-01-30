@@ -299,13 +299,13 @@ fn create_side_corridor() -> TileTemplate {
 }
 
 /// T-Connector - bridges center-door and side-door tiles.
-/// Has a center door on the South side and Left/Right doors on the North side.
-/// Shape: center corridor meets a side corridor in a T.
+/// Has a center door on the North side (stem) and Left doors on West/East sides (crossbar at bottom).
+/// Shape: crossbar at bottom, stem goes up, doors on crossbar face each other.
 fn create_t_connector() -> TileTemplate {
     let doors: HashSet<DoorId> = [
-        DoorId::new(TileSide::South, DoorPosition::Center),
-        DoorId::new(TileSide::North, DoorPosition::Left),
-        DoorId::new(TileSide::North, DoorPosition::Right),
+        DoorId::new(TileSide::North, DoorPosition::Center),
+        DoorId::new(TileSide::West, DoorPosition::Left),
+        DoorId::new(TileSide::East, DoorPosition::Left),
     ]
     .into_iter()
     .collect();
@@ -509,21 +509,21 @@ fn create_corner_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
     pattern
 }
 
-/// T-Connector - center corridor from south meets side corridor at north.
-/// Center door at South (index 4), Left door at North (index 1), Right door at North (index 7).
+/// T-Connector - crossbar at bottom, stem goes north.
+/// Center door at North (index 4), West-Left door (index 1), East-Left door (index 1).
 fn create_t_connector_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
     let mut pattern = [[false; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE];
 
-    // Vertical corridor from south center up to the junction
-    for y in 0..6 {
-        for x in 3..6 {
+    // Horizontal crossbar at bottom (rows 0, 1, 2)
+    for y in 0..3 {
+        for x in 0..PLANNING_TILE_SIZE {
             pattern[y][x] = true;
         }
     }
 
-    // Horizontal corridor at top (rows 6, 7, 8) connecting to Left and Right doors
-    for y in 6..PLANNING_TILE_SIZE {
-        for x in 0..PLANNING_TILE_SIZE {
+    // Vertical stem going north from center (columns 3, 4, 5)
+    for y in 2..PLANNING_TILE_SIZE {
+        for x in 3..6 {
             pattern[y][x] = true;
         }
     }
@@ -531,38 +531,38 @@ fn create_t_connector_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SI
     pattern
 }
 
-/// C-Connector - center corridor from west branches to top and bottom corridors on east.
+/// C-Connector - C shape opening to the east with spine on the left.
 /// Center door at West (index 4), Left door at East (index 1), Right door at East (index 7).
+/// Shape: top arm across, left spine connecting, bottom arm across, corners cut.
 fn create_c_connector_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
     let mut pattern = [[false; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE];
 
-    // Horizontal corridor from west center (rows 3, 4, 5)
+    // Top arm - across the top (rows 6, 7, 8)
+    for y in 6..PLANNING_TILE_SIZE {
+        for x in 0..PLANNING_TILE_SIZE {
+            pattern[y][x] = true;
+        }
+    }
+
+    // Left spine - connects top and bottom arms (rows 3, 4, 5, columns 0-2)
     for y in 3..6 {
-        for x in 0..6 {
+        for x in 0..3 {
             pattern[y][x] = true;
         }
     }
 
-    // Vertical spine on the right side connecting to the two side doors
-    for y in 0..PLANNING_TILE_SIZE {
-        for x in 6..PLANNING_TILE_SIZE {
+    // Bottom arm - across the bottom (rows 0, 1, 2)
+    for y in 0..3 {
+        for x in 0..PLANNING_TILE_SIZE {
             pattern[y][x] = true;
         }
     }
 
-    // Bottom arm to East-Left door (y=1)
-    for y in 0..4 {
-        for x in 6..PLANNING_TILE_SIZE {
-            pattern[y][x] = true;
-        }
-    }
+    // Remove top-left corner (0,8)
+    pattern[8][0] = false;
 
-    // Top arm to East-Right door (y=7)
-    for y in 5..PLANNING_TILE_SIZE {
-        for x in 6..PLANNING_TILE_SIZE {
-            pattern[y][x] = true;
-        }
-    }
+    // Remove bottom-left corner (0,0)
+    pattern[0][0] = false;
 
     pattern
 }
