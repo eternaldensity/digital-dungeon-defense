@@ -6,19 +6,22 @@
 //! - Combat tags for research unlocks
 //! - Pathfinding
 //! - Dungeon grid management
+//! - Game state management
 
-mod resources;
-mod health;
 mod combat;
 mod dungeon;
+mod game_state;
+mod health;
 mod pathfinding;
+mod resources;
 mod waves;
 
-pub use resources::*;
-pub use health::*;
 pub use combat::*;
 pub use dungeon::*;
+pub use game_state::*;
+pub use health::*;
 pub use pathfinding::*;
+pub use resources::*;
 pub use waves::*;
 
 use bevy::prelude::*;
@@ -28,6 +31,10 @@ pub struct CorePlugin;
 impl Plugin for CorePlugin {
     fn build(&self, app: &mut App) {
         app
+            // Game state
+            .init_state::<GameState>()
+            .init_resource::<GameOverState>()
+
             // Resources
             .init_resource::<PlayerResources>()
             .init_resource::<DungeonGrid>()
@@ -54,7 +61,18 @@ impl Plugin for CorePlugin {
             // Register combat types
             .register_type::<AttackCooldown>()
 
-            // Core systems
+            // Title screen input
+            .add_systems(Update, title_input_system.run_if(in_state(GameState::Title)))
+
+            // Game over input
+            .add_systems(Update, game_over_input_system.run_if(in_state(GameState::GameOver)))
+
+            // Pause toggle (Active or Paused)
+            .add_systems(Update, pause_toggle_system.run_if(
+                in_state(GameState::Active).or(in_state(GameState::Paused))
+            ))
+
+            // Active gameplay systems - only run during Active state
             .add_systems(Update, (
                 apply_damage_system,
                 check_death_system,
@@ -65,9 +83,6 @@ impl Plugin for CorePlugin {
                 wave_state_system,
                 wave_spawn_system,
                 core_death_system,
-            ).chain())
-
-            // Startup
-            .add_systems(Startup, setup_dungeon);
+            ).chain().run_if(in_state(GameState::Active)));
     }
 }

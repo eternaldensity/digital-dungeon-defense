@@ -68,6 +68,9 @@ pub struct WaveState {
     pub enemies_alive: u32,
     /// Current wave configuration
     pub config: WaveConfig,
+    /// Enemy spawn points from compiled layout (world position, floor index).
+    /// If empty, enemies spawn at default edge positions.
+    pub enemy_spawn_points: Vec<(Vec3, usize)>,
 }
 
 impl Default for WaveState {
@@ -81,6 +84,7 @@ impl Default for WaveState {
             enemies_spawned: 0,
             enemies_alive: 0,
             config: WaveConfig::for_wave(0),
+            enemy_spawn_points: Vec::new(),
         }
     }
 }
@@ -234,13 +238,24 @@ pub fn wave_spawn_system(
     wave_state.spawn_timer.tick(time.delta());
 
     if wave_state.spawn_timer.just_finished() {
-        // Calculate spawn position (right edge of screen, varied Y)
-        let spawn_index = wave_state.enemies_spawned;
-        let y_offset = (spawn_index as f32 - wave_state.config.enemy_count as f32 / 2.0) * 40.0;
+        // Get spawn position from enemy_spawn_points (up connector on top floor)
+        // or fall back to default edge position
+        let (position, floor) = if wave_state.enemy_spawn_points.is_empty() {
+            // Fallback: spawn at edge of screen
+            let spawn_index = wave_state.enemies_spawned;
+            let y_offset =
+                (spawn_index as f32 - wave_state.config.enemy_count as f32 / 2.0) * 40.0;
+            (Vec3::new(350.0, y_offset, 0.0), 0)
+        } else {
+            // Cycle through configured spawn points (up connectors on top floor)
+            let spawn_idx =
+                wave_state.enemies_spawned as usize % wave_state.enemy_spawn_points.len();
+            wave_state.enemy_spawn_points[spawn_idx]
+        };
 
         spawn_events.write(SpawnWaveEnemyEvent {
-            position: Vec3::new(350.0, y_offset, 0.0),
-            floor: 0,
+            position,
+            floor,
             health_multiplier: wave_state.config.health_multiplier,
             damage_multiplier: wave_state.config.damage_multiplier,
         });

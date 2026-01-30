@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Design and implement integrated gameplay loop with title screen and building mode (#28)
 - Design building mode and tile-based floor planning UI (#24)
 - Add floor damage modifier application to combat (#22)
 - Add win/lose conditions for waves (#17)

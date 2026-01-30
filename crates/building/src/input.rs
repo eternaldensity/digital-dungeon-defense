@@ -26,19 +26,25 @@ pub struct BuildInputPlugin;
 
 impl Plugin for BuildInputPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                toggle_build_mode,
-                handle_tile_selection,
-                handle_tile_rotation,
-                handle_tile_placement,
-                handle_tile_removal,
-                update_preview_position,
-                handle_floor_switching,
-                exit_build_mode,
-            ),
-        );
+        app
+            // Register messages
+            .add_message::<TilePlacedEvent>()
+            .add_message::<TileRemovedEvent>()
+            .add_message::<BuildModeChangedEvent>()
+            // Input systems
+            .add_systems(
+                Update,
+                (
+                    toggle_build_mode,
+                    handle_tile_selection,
+                    handle_tile_rotation,
+                    handle_tile_placement,
+                    handle_tile_removal,
+                    update_preview_position,
+                    handle_floor_switching,
+                    exit_build_mode,
+                ),
+            );
     }
 }
 
