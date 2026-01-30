@@ -41,7 +41,7 @@ impl Default for CameraSettings {
             pitch_degrees: 55.0,  // Angled down to see 3D depth
             yaw_degrees: 0.0,     // Looking along -Z (north in game terms)
             fov_degrees: 50.0,
-            pan_speed: 200.0,
+            pan_speed: 400.0,
             zoom_speed: 50.0,
             min_distance: 100.0,
             max_distance: 800.0,
