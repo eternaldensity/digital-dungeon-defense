@@ -1,0 +1,9 @@
+[package]
+name = "ddd_building"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bevy.workspace = true
+ddd_core.workspace = true
+serde = { workspace = true, features = ["derive"] }
