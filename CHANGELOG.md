@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix speed modifier applying every frame (#21)
 
 ### Changed
+- Add building mode input handling for tile placement (#26)
 - Create crates/building/ with core data structures (#25)
 - Analyze and prioritize missing gameplay features from design doc (#23)
 - Add win condition when all enemies in wave defeated (#20)

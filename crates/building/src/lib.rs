@@ -19,16 +19,23 @@
 //! - Path connectivity between floor connectors
 //! - Required features (core, up/down connectors)
 
+pub mod input;
 pub mod layout;
 pub mod tiles;
 pub mod validation;
 
+pub use input::{
+    planning_grid_to_world, world_to_planning_grid, BuildInputPlugin, BuildModeChangedEvent,
+    TilePlacedEvent, TileRemovedEvent, PLANNING_TILE_WORLD_SIZE,
+};
 pub use layout::{BuildMode, BuildModeState, DungeonLayout, FloorLayout, ValidationError};
 pub use tiles::{
     ConnectivityNode, ConstructionSlot, DoorId, DoorPosition, PlacedFeature, PlacedTile,
     SlotType, TileOrientation, TileSide, TileTemplate, TileTemplateId, PLANNING_TILE_SIZE,
 };
-pub use validation::{can_place_tile, validate_door_matching, validate_dungeon, validate_floor_connectivity};
+pub use validation::{
+    can_place_tile, validate_door_matching, validate_dungeon, validate_floor_connectivity,
+};
 
 use bevy::prelude::*;
 
@@ -39,6 +46,7 @@ impl Plugin for BuildingPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<BuildMode>()
             .init_resource::<DungeonLayout>()
-            .init_resource::<BuildModeState>();
+            .init_resource::<BuildModeState>()
+            .add_plugins(BuildInputPlugin);
     }
 }
