@@ -2,12 +2,25 @@
 
 use bevy::prelude::*;
 use ddd_core::{DungeonCore, Team};
-use crate::{TronMaterials, TronMeshes};
+use ddd_creatures::Spawner;
+use ddd_traps::{DataSpike, Firewall};
+use crate::{create_tron_material, TronMaterials, TronMeshes, TronPalette};
 use crate::CREATURE_SCALE;
 
 /// Marker component indicating an entity has been given 3D visuals
 #[derive(Component)]
 pub struct HasVisuals;
+
+/// Component for dungeon core pulsing animation
+#[derive(Component)]
+pub struct CorePulse {
+    /// Base scale of the core
+    pub base_scale: f32,
+    /// Phase offset for the animation (0.0 - 2π)
+    phase: f32,
+    /// Base emissive intensity
+    base_intensity: f32,
+}
 
 /// Plugin that syncs game entities to 3D visuals
 pub struct SyncPlugin;
@@ -17,34 +30,50 @@ impl Plugin for SyncPlugin {
         app.add_systems(Update, (
             sync_dungeon_core,
             sync_creatures,
+            sync_spawners,
+            sync_firewalls,
+            sync_data_spikes,
+            animate_core_pulse,
             sync_transforms_to_3d,
         ));
     }
 }
 
-/// Converts the dungeon core from sprite to 3D mesh
+/// Converts the dungeon core from sprite to 3D mesh with pulsing animation
 fn sync_dungeon_core(
     mut commands: Commands,
     query: Query<(Entity, &Transform), (With<DungeonCore>, Without<HasVisuals>)>,
-    materials: Option<Res<TronMaterials>>,
     meshes: Option<Res<TronMeshes>>,
+    palette: Option<Res<TronPalette>>,
+    mut material_assets: ResMut<Assets<StandardMaterial>>,
 ) {
-    let (Some(materials), Some(meshes)) = (materials, meshes) else {
+    let (Some(meshes), Some(palette)) = (meshes, palette) else {
         return;
     };
+
+    const BASE_INTENSITY: f32 = 4.0;
+    const BASE_SCALE: f32 = 24.0;
 
     for (entity, transform) in query.iter() {
         // Convert XY position to XZ plane (Y becomes height)
         let pos_3d = Vec3::new(transform.translation.x, 5.0, transform.translation.y);
 
+        // Create a unique material instance for this core so we can animate it
+        let core_material = material_assets.add(create_tron_material(palette.white_cyan, BASE_INTENSITY));
+
         commands.entity(entity)
             .remove::<Sprite>()
             .insert((
                 HasVisuals,
+                CorePulse {
+                    base_scale: BASE_SCALE,
+                    phase: 0.0,
+                    base_intensity: BASE_INTENSITY,
+                },
                 Mesh3d(meshes.core.clone()),
-                MeshMaterial3d(materials.white_cyan.clone()),
+                MeshMaterial3d(core_material),
                 Transform::from_translation(pos_3d)
-                    .with_scale(Vec3::splat(24.0)),
+                    .with_scale(Vec3::splat(BASE_SCALE)),
             ));
     }
 }
@@ -86,6 +115,136 @@ fn sync_creatures(
                 MeshMaterial3d(material),
                 Transform::from_translation(pos_3d).with_scale(scale),
             ));
+    }
+}
+
+/// Converts firewall traps to 3D orange cuboids
+fn sync_firewalls(
+    mut commands: Commands,
+    query: Query<(Entity, &Transform, &Firewall), (With<Sprite>, Without<HasVisuals>)>,
+    materials: Option<Res<TronMaterials>>,
+    meshes: Option<Res<TronMeshes>>,
+) {
+    let (Some(materials), Some(meshes)) = (materials, meshes) else {
+        return;
+    };
+
+    for (entity, transform, firewall) in query.iter() {
+        // Convert XY position to XZ plane, firewall sits on the ground
+        let pos_3d = Vec3::new(transform.translation.x, 4.0, transform.translation.y);
+
+        // Scale based on firewall width
+        let scale = Vec3::new(firewall.width / 2.0, 8.0, 4.0);
+
+        commands.entity(entity)
+            .remove::<Sprite>()
+            .insert((
+                HasVisuals,
+                Mesh3d(meshes.firewall.clone()),
+                MeshMaterial3d(materials.firewall.clone()),
+                Transform::from_translation(pos_3d).with_scale(scale),
+            ));
+    }
+}
+
+/// Converts data spike traps to 3D magenta cones
+fn sync_data_spikes(
+    mut commands: Commands,
+    query: Query<(Entity, &Transform), (With<DataSpike>, With<Sprite>, Without<HasVisuals>)>,
+    materials: Option<Res<TronMaterials>>,
+    meshes: Option<Res<TronMeshes>>,
+) {
+    let (Some(materials), Some(meshes)) = (materials, meshes) else {
+        return;
+    };
+
+    for (entity, transform) in query.iter() {
+        // Convert XY position to XZ plane, spike points upward from ground
+        let pos_3d = Vec3::new(transform.translation.x, 0.0, transform.translation.y);
+
+        // Scale for visible spike
+        let scale = Vec3::splat(12.0);
+
+        commands.entity(entity)
+            .remove::<Sprite>()
+            .insert((
+                HasVisuals,
+                Mesh3d(meshes.data_spike.clone()),
+                MeshMaterial3d(materials.magenta.clone()),
+                Transform::from_translation(pos_3d).with_scale(scale),
+            ));
+    }
+}
+
+/// Converts spawner entities to 3D hexagonal cylinders
+/// Player spawners are cyan, enemy spawners are orange-red
+fn sync_spawners(
+    mut commands: Commands,
+    query: Query<(Entity, &Transform, Option<&Team>), (With<Spawner>, With<Sprite>, Without<HasVisuals>)>,
+    materials: Option<Res<TronMaterials>>,
+    meshes: Option<Res<TronMeshes>>,
+) {
+    let (Some(materials), Some(meshes)) = (materials, meshes) else {
+        return;
+    };
+
+    for (entity, transform, team) in query.iter() {
+        // Convert XY position to XZ plane, spawner sits on ground
+        let pos_3d = Vec3::new(transform.translation.x, 0.0, transform.translation.y);
+
+        // Choose material based on team (default to player/cyan if no team)
+        let material = match team {
+            Some(Team::Enemy) => materials.orange.clone(),
+            _ => materials.cyan.clone(),
+        };
+
+        // Scale for visible spawner
+        let scale = Vec3::new(16.0, 12.0, 16.0);
+
+        commands.entity(entity)
+            .remove::<Sprite>()
+            .insert((
+                HasVisuals,
+                Mesh3d(meshes.spawner.clone()),
+                MeshMaterial3d(material),
+                Transform::from_translation(pos_3d).with_scale(scale),
+            ));
+    }
+}
+
+/// Animates the dungeon core with pulsing scale and emissive intensity
+fn animate_core_pulse(
+    mut query: Query<(&mut Transform, &mut CorePulse, &MeshMaterial3d<StandardMaterial>)>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    palette: Option<Res<TronPalette>>,
+    time: Res<Time>,
+) {
+    let Some(palette) = palette else {
+        return;
+    };
+
+    const PULSE_SPEED: f32 = 2.0; // Cycles per second
+    const SCALE_AMPLITUDE: f32 = 0.08; // 8% scale variation
+    const INTENSITY_AMPLITUDE: f32 = 1.5; // Intensity varies by ±1.5
+
+    for (mut transform, mut pulse, material_handle) in query.iter_mut() {
+        // Update phase
+        pulse.phase += time.delta_secs() * PULSE_SPEED * std::f32::consts::TAU;
+        if pulse.phase > std::f32::consts::TAU {
+            pulse.phase -= std::f32::consts::TAU;
+        }
+
+        let sin_value = pulse.phase.sin();
+
+        // Animate scale (breathing effect)
+        let scale_factor = 1.0 + sin_value * SCALE_AMPLITUDE;
+        transform.scale = Vec3::splat(pulse.base_scale * scale_factor);
+
+        // Animate emissive intensity
+        if let Some(material) = materials.get_mut(material_handle.id()) {
+            let intensity = pulse.base_intensity + sin_value * INTENSITY_AMPLITUDE;
+            material.emissive = TronPalette::to_emissive(palette.white_cyan, intensity);
+        }
     }
 }
 

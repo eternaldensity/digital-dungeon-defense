@@ -13,12 +13,16 @@ pub struct TronPalette {
     pub magenta: Color,
     /// White-cyan for the dungeon core
     pub white_cyan: Color,
-    /// Grid line color (darker cyan)
+    /// Grid line color (darker cyan) - default/neutral floor
     pub grid: Color,
     /// Firewall orange
     pub firewall: Color,
     /// Background black
     pub background: Color,
+    /// Fire floor grid color (orange-red)
+    pub grid_fire: Color,
+    /// Ice floor grid color (light blue)
+    pub grid_ice: Color,
 }
 
 impl Default for TronPalette {
@@ -31,6 +35,8 @@ impl Default for TronPalette {
             grid: Color::srgb(0.0, 0.6, 0.8),
             firewall: Color::srgb(1.0, 0.7, 0.3),
             background: Color::BLACK,
+            grid_fire: Color::srgb(1.0, 0.4, 0.1),
+            grid_ice: Color::srgb(0.3, 0.7, 1.0),
         }
     }
 }
