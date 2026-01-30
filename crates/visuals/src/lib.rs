@@ -17,6 +17,7 @@ mod materials;
 mod meshes;
 mod combat_fx;
 mod resource_fx;
+mod build_visuals;
 
 pub use palette::*;
 pub use camera::*;
@@ -28,6 +29,7 @@ pub use materials::*;
 pub use meshes::*;
 pub use combat_fx::*;
 pub use resource_fx::*;
+pub use build_visuals::*;
 
 use bevy::prelude::*;
 
@@ -47,6 +49,7 @@ impl Plugin for VisualsPlugin {
                 SyncPlugin,
                 CombatFxPlugin,
                 ResourceFxPlugin,
+                BuildVisualsPlugin,
             ));
     }
 }

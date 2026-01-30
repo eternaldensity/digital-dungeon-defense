@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Design building mode and tile-based floor planning UI (#24)
 - Add floor damage modifier application to combat (#22)
 - Add win/lose conditions for waves (#17)
 - Add wave spawning system for enemy progression (#13)
@@ -23,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix speed modifier applying every frame (#21)
 
 ### Changed
+- Add visual rendering for planning tiles in build mode (#27)
 - Add building mode input handling for tile placement (#26)
 - Create crates/building/ with core data structures (#25)
 - Analyze and prioritize missing gameplay features from design doc (#23)
