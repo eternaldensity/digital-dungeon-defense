@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Add T-shaped and C-shaped corridor tiles for connecting central and side door tiles (#53)
 - Add side corridor tile with outer door positions (#48)
 - Add WASD and numpad controls for camera panning and tile selection (#44)
 - Add mousewheel zoom control for camera (#38)

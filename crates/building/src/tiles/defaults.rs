@@ -18,6 +18,8 @@ pub fn create_default_templates() -> HashMap<TileTemplateId, TileTemplate> {
     templates.insert(TileTemplateId(6), create_t_junction());
     templates.insert(TileTemplateId(7), create_corner());
     templates.insert(TileTemplateId(8), create_side_corridor());
+    templates.insert(TileTemplateId(9), create_t_connector());
+    templates.insert(TileTemplateId(10), create_c_connector());
 
     templates
 }
@@ -296,6 +298,79 @@ fn create_side_corridor() -> TileTemplate {
     }
 }
 
+/// T-Connector - bridges center-door and side-door tiles.
+/// Has a center door on the South side and Left/Right doors on the North side.
+/// Shape: center corridor meets a side corridor in a T.
+fn create_t_connector() -> TileTemplate {
+    let doors: HashSet<DoorId> = [
+        DoorId::new(TileSide::South, DoorPosition::Center),
+        DoorId::new(TileSide::North, DoorPosition::Left),
+        DoorId::new(TileSide::North, DoorPosition::Right),
+    ]
+    .into_iter()
+    .collect();
+
+    let slots = vec![ConstructionSlot::new(0.5, 0.5, SlotType::Trap, 0)];
+
+    let connectivity = vec![{
+        let mut set = HashSet::new();
+        for door in &doors {
+            set.insert(ConnectivityNode::Door(*door));
+        }
+        set.insert(ConnectivityNode::Slot(0));
+        set
+    }];
+
+    TileTemplate {
+        id: TileTemplateId(9),
+        name: "T-Connector".to_string(),
+        doors,
+        slots,
+        connectivity,
+        walkable_pattern: create_t_connector_pattern(),
+        visual_id: "t_connector".to_string(),
+    }
+}
+
+/// C-Connector - bridges center-door and side-door tiles.
+/// Has a center door on the West side and Left/Right doors on the East side.
+/// Shape: like a C opening to the east, with center entry from west.
+fn create_c_connector() -> TileTemplate {
+    let doors: HashSet<DoorId> = [
+        DoorId::new(TileSide::West, DoorPosition::Center),
+        DoorId::new(TileSide::East, DoorPosition::Left),
+        DoorId::new(TileSide::East, DoorPosition::Right),
+    ]
+    .into_iter()
+    .collect();
+
+    let slots = vec![
+        ConstructionSlot::new(0.5, 0.25, SlotType::Trap, 0),
+        ConstructionSlot::new(0.5, 0.75, SlotType::Trap, 1),
+    ];
+
+    let connectivity = vec![{
+        let mut set = HashSet::new();
+        for door in &doors {
+            set.insert(ConnectivityNode::Door(*door));
+        }
+        for slot in &slots {
+            set.insert(ConnectivityNode::Slot(slot.slot_id));
+        }
+        set
+    }];
+
+    TileTemplate {
+        id: TileTemplateId(10),
+        name: "C-Connector".to_string(),
+        doors,
+        slots,
+        connectivity,
+        walkable_pattern: create_c_connector_pattern(),
+        visual_id: "c_connector".to_string(),
+    }
+}
+
 // Walkable pattern helpers
 // true = walkable, false = wall
 // Pattern is indexed as [y][x] where y=0 is south, y=8 is north
@@ -434,6 +509,64 @@ fn create_corner_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
     pattern
 }
 
+/// T-Connector - center corridor from south meets side corridor at north.
+/// Center door at South (index 4), Left door at North (index 1), Right door at North (index 7).
+fn create_t_connector_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
+    let mut pattern = [[false; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE];
+
+    // Vertical corridor from south center up to the junction
+    for y in 0..6 {
+        for x in 3..6 {
+            pattern[y][x] = true;
+        }
+    }
+
+    // Horizontal corridor at top (rows 6, 7, 8) connecting to Left and Right doors
+    for y in 6..PLANNING_TILE_SIZE {
+        for x in 0..PLANNING_TILE_SIZE {
+            pattern[y][x] = true;
+        }
+    }
+
+    pattern
+}
+
+/// C-Connector - center corridor from west branches to top and bottom corridors on east.
+/// Center door at West (index 4), Left door at East (index 1), Right door at East (index 7).
+fn create_c_connector_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
+    let mut pattern = [[false; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE];
+
+    // Horizontal corridor from west center (rows 3, 4, 5)
+    for y in 3..6 {
+        for x in 0..6 {
+            pattern[y][x] = true;
+        }
+    }
+
+    // Vertical spine on the right side connecting to the two side doors
+    for y in 0..PLANNING_TILE_SIZE {
+        for x in 6..PLANNING_TILE_SIZE {
+            pattern[y][x] = true;
+        }
+    }
+
+    // Bottom arm to East-Left door (y=1)
+    for y in 0..4 {
+        for x in 6..PLANNING_TILE_SIZE {
+            pattern[y][x] = true;
+        }
+    }
+
+    // Top arm to East-Right door (y=7)
+    for y in 5..PLANNING_TILE_SIZE {
+        for x in 6..PLANNING_TILE_SIZE {
+            pattern[y][x] = true;
+        }
+    }
+
+    pattern
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -441,9 +574,9 @@ mod tests {
     #[test]
     fn test_create_default_templates() {
         let templates = create_default_templates();
-        assert_eq!(templates.len(), 8);
+        assert_eq!(templates.len(), 10);
         assert!(templates.contains_key(&TileTemplateId(1)));
-        assert!(templates.contains_key(&TileTemplateId(8)));
+        assert!(templates.contains_key(&TileTemplateId(10)));
     }
 
     #[test]
