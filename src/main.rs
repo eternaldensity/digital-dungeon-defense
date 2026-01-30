@@ -171,7 +171,7 @@ fn setup_title_screen(mut commands: Commands) {
                     ));
 
                     let control_lines = [
-                        "1-7: Select tile type",
+                        "1-8: Select tile type",
                         "Click: Place tile  |  Right-click: Remove",
                         "R: Rotate  |  F: Flip",
                         "SPACE: Start waves (when layout is valid)",
@@ -235,7 +235,7 @@ fn setup_building_ui(
 
     // Tile legend
     commands.spawn((
-        Text::new("Tiles:\n1: Basic Room\n2: Corridor\n3: Core Chamber\n4: Stairwell\n5: L-Room\n6: T-Junction\n7: Corner"),
+        Text::new("Tiles:\n1: Basic Room\n2: Corridor\n3: Core Chamber\n4: Stairwell\n5: L-Room\n6: T-Junction\n7: Corner\n8: Side Corridor"),
         TextFont {
             font_size: 14.0,
             ..default()

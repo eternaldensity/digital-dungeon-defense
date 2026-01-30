@@ -363,27 +363,30 @@ fn spawn_tile_visual(
 }
 
 /// Transform pattern coordinates based on tile orientation.
+/// This is an INVERSE transform: given visual position, find original pattern position.
+/// Forward transform is: rotate CW, then flip.
+/// Inverse transform is: un-flip (= flip), then rotate CCW.
 fn transform_pattern_coords(x: usize, y: usize, orientation: TileOrientation) -> (usize, usize) {
     let x = x as i32;
     let y = y as i32;
 
-    // Apply rotation (0, 90, 180, 270 degrees CW)
-    let (rx, ry) = match orientation.rotation {
-        0 => (x, y),
-        1 => (8 - y, x),      // 90 CW
-        2 => (8 - x, 8 - y),  // 180
-        3 => (y, 8 - x),      // 270 CW
-        _ => (x, y),
-    };
-
-    // Apply flip (horizontal flip after rotation)
+    // Apply INVERSE flip first (flip is self-inverse)
     let (fx, fy) = if orientation.flipped {
-        (8 - rx, ry)
+        (8 - x, y)
     } else {
-        (rx, ry)
+        (x, y)
     };
 
-    (fx as usize, fy as usize)
+    // Apply INVERSE rotation (CCW to undo CW)
+    let (rx, ry) = match orientation.rotation {
+        0 => (fx, fy),
+        1 => (8 - fy, fx),    // 90 CCW inverse for 90 CW display
+        2 => (8 - fx, 8 - fy), // 180 (self-inverse)
+        3 => (fy, 8 - fx),    // 90 CW inverse for 270 CW display (= 270 CCW)
+        _ => (fx, fy),
+    };
+
+    (rx as usize, ry as usize)
 }
 
 /// Spawn construction slot indicators for a tile.
@@ -441,9 +444,9 @@ fn transform_slot_position(pos: Vec2, orientation: TileOrientation) -> Vec2 {
 
     let rotated = match orientation.rotation {
         0 => centered,
-        1 => Vec2::new(-centered.y, centered.x),      // 90 CW
+        1 => Vec2::new(centered.y, -centered.x),      // 90 CW
         2 => Vec2::new(-centered.x, -centered.y),     // 180
-        3 => Vec2::new(centered.y, -centered.x),      // 270 CW
+        3 => Vec2::new(-centered.y, centered.x),      // 270 CW
         _ => centered,
     };
 
@@ -523,33 +526,8 @@ fn spawn_door_indicators(
 
 /// Transform a door ID based on tile orientation.
 fn transform_door(door: &ddd_building::DoorId, orientation: TileOrientation) -> ddd_building::DoorId {
-    use ddd_building::{DoorId, DoorPosition};
-
-    let mut side = door.side;
-    let mut position = door.position;
-
-    // Apply rotation
-    for _ in 0..orientation.rotation {
-        side = side.rotate_cw();
-    }
-
-    // Apply flip (mirror horizontally)
-    if orientation.flipped {
-        side = match side {
-            TileSide::North => TileSide::North,
-            TileSide::South => TileSide::South,
-            TileSide::East => TileSide::West,
-            TileSide::West => TileSide::East,
-        };
-        // Also mirror the position along the edge
-        position = match position {
-            DoorPosition::Left => DoorPosition::Right,
-            DoorPosition::Center => DoorPosition::Center,
-            DoorPosition::Right => DoorPosition::Left,
-        };
-    }
-
-    DoorId::new(side, position)
+    // Delegate to the canonical implementation in orientation.rs
+    orientation.transform_door(*door)
 }
 
 /// Update the ghost preview tile.

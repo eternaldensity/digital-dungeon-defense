@@ -113,6 +113,7 @@ fn handle_tile_selection(
         (KeyCode::Digit5, TileTemplateId(5)), // L-Room
         (KeyCode::Digit6, TileTemplateId(6)), // T-Junction
         (KeyCode::Digit7, TileTemplateId(7)), // Corner
+        (KeyCode::Digit8, TileTemplateId(8)), // Side Corridor
         // Numpad
         (KeyCode::Numpad1, TileTemplateId(1)),
         (KeyCode::Numpad2, TileTemplateId(2)),
@@ -121,6 +122,7 @@ fn handle_tile_selection(
         (KeyCode::Numpad5, TileTemplateId(5)),
         (KeyCode::Numpad6, TileTemplateId(6)),
         (KeyCode::Numpad7, TileTemplateId(7)),
+        (KeyCode::Numpad8, TileTemplateId(8)),
     ];
 
     for (key, template_id) in key_to_template {

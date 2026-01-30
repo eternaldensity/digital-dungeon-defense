@@ -37,55 +37,62 @@ impl TileOrientation {
     }
 
     /// Transform a door ID according to this orientation.
+    /// Order: rotation first, then flip (matches pattern transform order).
     pub fn transform_door(&self, door: DoorId) -> DoorId {
         let mut side = door.side;
         let mut position = door.position;
 
-        // Apply flip first (mirrors on Y axis, so East/West swap, Left/Right swap)
+        // Apply rotation first
+        for _ in 0..self.rotation {
+            let new_side = side.rotate_cw();
+            // When rotating CW, door positions flip only when moving from horizontal to vertical wall.
+            // This is because the coordinate that determines position changes:
+            // - On N/S walls: x-coordinate determines Left(1)/Center(4)/Right(7)
+            // - On E/W walls: y-coordinate determines Left(1)/Center(4)/Right(7)
+            // Going N→E or S→W: the value that was at one end is now at the other
+            position = match (side, new_side) {
+                (TileSide::North, TileSide::East) => flip_position_for_rotation(position),
+                (TileSide::South, TileSide::West) => flip_position_for_rotation(position),
+                // E→S and W→N: position stays the same
+                _ => position,
+            };
+            side = new_side;
+        }
+
+        // Apply flip after rotation (mirrors on Y axis, so East/West swap)
         if self.flipped {
+            // For North/South walls, flip mirrors Left/Right positions
+            // For East/West walls, flip swaps which wall but position stays same
+            if matches!(side, TileSide::North | TileSide::South) {
+                position = position.mirror();
+            }
             side = match side {
                 TileSide::North => TileSide::North,
                 TileSide::South => TileSide::South,
                 TileSide::East => TileSide::West,
                 TileSide::West => TileSide::East,
             };
-            // For North/South sides, flip also mirrors Left/Right positions
-            if matches!(side, TileSide::North | TileSide::South) {
-                position = position.mirror();
-            }
-        }
-
-        // Apply rotation
-        for _ in 0..self.rotation {
-            let new_side = side.rotate_cw();
-            // When rotating, door positions shift based on which wall they're moving to
-            position = match (side, new_side) {
-                // Moving from horizontal wall to vertical wall
-                (TileSide::North, TileSide::East) => flip_position_for_rotation(position),
-                (TileSide::South, TileSide::West) => flip_position_for_rotation(position),
-                // Moving from vertical wall to horizontal wall
-                (TileSide::East, TileSide::South) => flip_position_for_rotation(position),
-                (TileSide::West, TileSide::North) => flip_position_for_rotation(position),
-                _ => position,
-            };
-            side = new_side;
         }
 
         DoorId::new(side, position)
     }
 
-    /// Transform local coordinates (0..SIZE-1) according to this orientation.
+    /// Transform local coordinates for pattern lookup.
+    /// Given a visual position (x, y) after rotation, returns the original pattern position.
+    /// This is the INVERSE of the visual rotation.
     pub fn transform_local_coords(&self, x: usize, y: usize) -> (usize, usize) {
         let size = PLANNING_TILE_SIZE;
         let mut tx = x;
         let mut ty = y;
 
-        // Apply flip first (mirror on Y axis, so X coordinates flip)
+        // Apply INVERSE flip first (before inverse rotation)
+        // Flip is self-inverse, so same operation
         if self.flipped {
             tx = size - 1 - tx;
         }
 
-        // Apply rotation
+        // Apply INVERSE rotation (CCW to undo CW rotation)
+        // For each CW step we applied, apply one CCW step to invert
         for _ in 0..self.rotation {
             let new_x = size - 1 - ty;
             let new_y = tx;
@@ -97,19 +104,20 @@ impl TileOrientation {
     }
 
     /// Transform a normalized local position (0.0..1.0) according to this orientation.
+    /// Order: rotation first, then flip (matches pattern transform order).
     pub fn transform_local_position(&self, pos: Vec2) -> Vec2 {
         let mut p = pos;
 
-        // Apply flip first
-        if self.flipped {
-            p.x = 1.0 - p.x;
+        // Apply rotation first (CW: x,y -> y, 1-x)
+        for _ in 0..self.rotation {
+            let new_x = p.y;
+            let new_y = 1.0 - p.x;
+            p = Vec2::new(new_x, new_y);
         }
 
-        // Apply rotation
-        for _ in 0..self.rotation {
-            let new_x = 1.0 - p.y;
-            let new_y = p.x;
-            p = Vec2::new(new_x, new_y);
+        // Apply flip after rotation
+        if self.flipped {
+            p.x = 1.0 - p.x;
         }
 
         p
@@ -202,17 +210,43 @@ mod tests {
     #[test]
     fn test_transform_coords_90_cw() {
         let o = TileOrientation::new(1, false);
-        // (0,0) -> (8,0) after 90 CW rotation in 9x9 grid
+        // After 90 CW display rotation, lookup uses 90 CCW to find original position
+        // Visual (0,0) comes from original (8,0)
         assert_eq!(o.transform_local_coords(0, 0), (8, 0));
-        // (8,0) -> (8,8)
+        // Visual (8,0) comes from original (8,8)
         assert_eq!(o.transform_local_coords(8, 0), (8, 8));
+        // Visual (7,0) (South-Right) comes from original (8,7) (East-Right)
+        assert_eq!(o.transform_local_coords(7, 0), (8, 7));
     }
 
     #[test]
     fn test_transform_coords_flipped() {
         let o = TileOrientation::new(0, true);
-        // Flip mirrors X
+        // Flip mirrors X (self-inverse)
         assert_eq!(o.transform_local_coords(0, 0), (8, 0));
         assert_eq!(o.transform_local_coords(8, 0), (0, 0));
+    }
+
+    #[test]
+    fn test_transform_coords_rot1_flipped() {
+        let o = TileOrientation::new(1, true);
+        // Forward: rotate CW then flip
+        // East-Right (8,7) -> rot CW -> (7,0) South-Right -> flip -> (1,0) South-Left
+        // Inverse: (1,0) -> flip -> (7,0) -> CCW -> (8,7)
+        assert_eq!(o.transform_local_coords(1, 0), (8, 7));
+
+        // West-Right (0,7) -> rot CW -> (7,8) North-Right -> flip -> (1,8) North-Left
+        // Inverse: (1,8) -> flip -> (7,8) -> CCW -> (0,7)
+        assert_eq!(o.transform_local_coords(1, 8), (0, 7));
+    }
+
+    #[test]
+    fn test_transform_door_rot1_flipped() {
+        let o = TileOrientation::new(1, true);
+        // East-Right -> rot CW: South-Right -> flip: South-Left
+        let door = DoorId::new(TileSide::East, DoorPosition::Right);
+        let transformed = o.transform_door(door);
+        assert_eq!(transformed.side, TileSide::South);
+        assert_eq!(transformed.position, DoorPosition::Left);
     }
 }

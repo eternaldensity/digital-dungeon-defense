@@ -17,6 +17,7 @@ pub fn create_default_templates() -> HashMap<TileTemplateId, TileTemplate> {
     templates.insert(TileTemplateId(5), create_l_room());
     templates.insert(TileTemplateId(6), create_t_junction());
     templates.insert(TileTemplateId(7), create_corner());
+    templates.insert(TileTemplateId(8), create_side_corridor());
 
     templates
 }
@@ -165,11 +166,11 @@ fn create_stairwell() -> TileTemplate {
     }
 }
 
-/// L-Room - asymmetric room with North-left and East-right doors.
+/// L-Room - asymmetric room with North-left and East-left doors.
 fn create_l_room() -> TileTemplate {
     let doors: HashSet<DoorId> = [
         DoorId::new(TileSide::North, DoorPosition::Left),
-        DoorId::new(TileSide::East, DoorPosition::Right),
+        DoorId::new(TileSide::East, DoorPosition::Left),
     ]
     .into_iter()
     .collect();
@@ -264,6 +265,37 @@ fn create_corner() -> TileTemplate {
     }
 }
 
+/// Side Corridor - straight hallway with East-right/West-right outer doors (connects to L-room).
+fn create_side_corridor() -> TileTemplate {
+    let doors: HashSet<DoorId> = [
+        DoorId::new(TileSide::East, DoorPosition::Right),
+        DoorId::new(TileSide::West, DoorPosition::Right),
+    ]
+    .into_iter()
+    .collect();
+
+    let slots = vec![ConstructionSlot::new(0.5, 0.15, SlotType::Trap, 0)];
+
+    let connectivity = vec![{
+        let mut set = HashSet::new();
+        for door in &doors {
+            set.insert(ConnectivityNode::Door(*door));
+        }
+        set.insert(ConnectivityNode::Slot(0));
+        set
+    }];
+
+    TileTemplate {
+        id: TileTemplateId(8),
+        name: "Side Corridor".to_string(),
+        doors,
+        slots,
+        connectivity,
+        walkable_pattern: create_side_corridor_pattern(),
+        visual_id: "side_corridor".to_string(),
+    }
+}
+
 // Walkable pattern helpers
 // true = walkable, false = wall
 // Pattern is indexed as [y][x] where y=0 is south, y=8 is north
@@ -288,12 +320,26 @@ fn create_open_room_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE
     pattern
 }
 
-/// Corridor - narrow walkway East-West.
+/// Corridor - narrow walkway East-West at center.
 fn create_corridor_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
     let mut pattern = [[false; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE];
 
     // 3-wide corridor in the center (rows 3, 4, 5)
     for y in 3..6 {
+        for x in 0..PLANNING_TILE_SIZE {
+            pattern[y][x] = true;
+        }
+    }
+
+    pattern
+}
+
+/// Side Corridor - narrow walkway East-West at top (y=6-8), with Right doors.
+fn create_side_corridor_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
+    let mut pattern = [[false; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE];
+
+    // 3-wide corridor at top (rows 6, 7, 8) - matches Right door position (index 7)
+    for y in 6..PLANNING_TILE_SIZE {
         for x in 0..PLANNING_TILE_SIZE {
             pattern[y][x] = true;
         }
@@ -337,11 +383,11 @@ fn create_l_room_pattern() -> [[bool; PLANNING_TILE_SIZE]; PLANNING_TILE_SIZE] {
         }
     }
 
-    // North-left door (x=1, y=8)
+    // North-left door (x=1, y=8) - Left = index 1
     pattern[8][1] = true;
 
-    // East-right door (x=8, y=7)
-    pattern[7][8] = true;
+    // East-left door (x=8, y=1) - Left = index 1
+    pattern[1][8] = true;
 
     pattern
 }
@@ -395,9 +441,9 @@ mod tests {
     #[test]
     fn test_create_default_templates() {
         let templates = create_default_templates();
-        assert_eq!(templates.len(), 7);
+        assert_eq!(templates.len(), 8);
         assert!(templates.contains_key(&TileTemplateId(1)));
-        assert!(templates.contains_key(&TileTemplateId(7)));
+        assert!(templates.contains_key(&TileTemplateId(8)));
     }
 
     #[test]

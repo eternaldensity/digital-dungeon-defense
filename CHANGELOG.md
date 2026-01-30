@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Add side corridor tile with outer door positions (#48)
 - Add WASD and numpad controls for camera panning and tile selection (#44)
 - Add mousewheel zoom control for camera (#38)
 - Add arrow key controls to pan camera target location (#37)
@@ -26,6 +27,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add trap visuals (Firewall, DataSpike) (#1)
 
 ### Fixed
+- Fix tile door positions to remain aligned with walkable pattern during rotation and flip (#50)
+- Fix L-Room and Side Corridor door positions to match walkable patterns (#49)
+- Fix L-Room tile door position to match walkable pattern (#47)
 - Fix tile grid boundary issues and implement level-based sizing (#39)
 - Fix duplicate grid rendering - old grid drawn alongside new tile grid (#29)
 - Fix speed modifier applying every frame (#21)
