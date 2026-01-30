@@ -90,7 +90,7 @@ fn toggle_build_mode(
     }
 }
 
-/// Handle direct tile template selection with number keys.
+/// Handle direct tile template selection with number keys and numpad.
 fn handle_tile_selection(
     keyboard: Res<ButtonInput<KeyCode>>,
     current_state: Res<State<BuildMode>>,
@@ -103,7 +103,9 @@ fn handle_tile_selection(
         return;
     }
 
+    // Map both number row and numpad keys to templates
     let key_to_template = [
+        // Number row
         (KeyCode::Digit1, TileTemplateId(1)), // Basic Room
         (KeyCode::Digit2, TileTemplateId(2)), // Corridor
         (KeyCode::Digit3, TileTemplateId(3)), // Core Chamber
@@ -111,6 +113,14 @@ fn handle_tile_selection(
         (KeyCode::Digit5, TileTemplateId(5)), // L-Room
         (KeyCode::Digit6, TileTemplateId(6)), // T-Junction
         (KeyCode::Digit7, TileTemplateId(7)), // Corner
+        // Numpad
+        (KeyCode::Numpad1, TileTemplateId(1)),
+        (KeyCode::Numpad2, TileTemplateId(2)),
+        (KeyCode::Numpad3, TileTemplateId(3)),
+        (KeyCode::Numpad4, TileTemplateId(4)),
+        (KeyCode::Numpad5, TileTemplateId(5)),
+        (KeyCode::Numpad6, TileTemplateId(6)),
+        (KeyCode::Numpad7, TileTemplateId(7)),
     ];
 
     for (key, template_id) in key_to_template {

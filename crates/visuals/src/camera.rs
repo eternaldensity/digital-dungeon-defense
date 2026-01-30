@@ -113,7 +113,7 @@ fn setup_camera(mut commands: Commands, settings: Res<CameraSettings>, state: Re
     ));
 }
 
-/// Handle arrow key input to pan camera target
+/// Handle arrow key and WASD input to pan camera target
 fn handle_camera_pan_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     settings: Res<CameraSettings>,
@@ -122,16 +122,16 @@ fn handle_camera_pan_input(
 ) {
     let mut direction = Vec3::ZERO;
 
-    if keyboard.pressed(KeyCode::ArrowUp) {
+    if keyboard.pressed(KeyCode::ArrowUp) || keyboard.pressed(KeyCode::KeyW) {
         direction.z -= 1.0;
     }
-    if keyboard.pressed(KeyCode::ArrowDown) {
+    if keyboard.pressed(KeyCode::ArrowDown) || keyboard.pressed(KeyCode::KeyS) {
         direction.z += 1.0;
     }
-    if keyboard.pressed(KeyCode::ArrowLeft) {
+    if keyboard.pressed(KeyCode::ArrowLeft) || keyboard.pressed(KeyCode::KeyA) {
         direction.x -= 1.0;
     }
-    if keyboard.pressed(KeyCode::ArrowRight) {
+    if keyboard.pressed(KeyCode::ArrowRight) || keyboard.pressed(KeyCode::KeyD) {
         direction.x += 1.0;
     }
 
