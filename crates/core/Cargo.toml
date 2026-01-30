@@ -1,0 +1,9 @@
+[package]
+name = "ddd_core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bevy.workspace = true
+rand.workspace = true
+serde.workspace = true

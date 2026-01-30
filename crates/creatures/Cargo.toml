@@ -1,0 +1,9 @@
+[package]
+name = "ddd_creatures"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bevy.workspace = true
+rand.workspace = true
+ddd_core.workspace = true

@@ -1,0 +1,41 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/creatures",
+    "crates/abilities",
+    "crates/floors",
+    "crates/traps",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[workspace.dependencies]
+bevy = "0.15"
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Internal crates
+ddd_core = { path = "crates/core" }
+ddd_creatures = { path = "crates/creatures" }
+ddd_abilities = { path = "crates/abilities" }
+ddd_floors = { path = "crates/floors" }
+ddd_traps = { path = "crates/traps" }
+
+[package]
+name = "digital-dungeon-defense"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bevy.workspace = true
+rand.workspace = true
+ddd_core.workspace = true
+ddd_creatures.workspace = true
+ddd_abilities.workspace = true
+ddd_floors.workspace = true
+ddd_traps.workspace = true

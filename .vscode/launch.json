@@ -1,0 +1,89 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    
+    {
+      "name": "Debug unit tests in library 'ddd_core'",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "test",
+          "--package=ddd_core"
+        ]
+      }
+    },
+    {
+      "name": "Debug unit tests in library 'ddd_creatures'",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "test",
+          "--package=ddd_creatures"
+        ]
+      }
+    },
+    {
+      "name": "Debug unit tests in library 'ddd_abilities'",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "test",
+          "--package=ddd_abilities"
+        ]
+      }
+    },
+    {
+      "name": "Debug unit tests in library 'ddd_floors'",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "test",
+          "--package=ddd_floors"
+        ]
+      }
+    },
+    {
+      "name": "Debug unit tests in library 'ddd_traps'",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "test",
+          "--package=ddd_traps"
+        ]
+      }
+    },
+    {
+      "name": "Debug executable 'digital-dungeon-defense'",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "run",
+          "--bin=digital-dungeon-defense",
+          "--package=digital-dungeon-defense"
+        ]
+      },
+      "args": []
+    },
+    {
+      "name": "Debug unit tests in executable 'digital-dungeon-defense'",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "test",
+          "--bin=digital-dungeon-defense",
+          "--package=digital-dungeon-defense"
+        ]
+      }
+    }
+  ]
+}
