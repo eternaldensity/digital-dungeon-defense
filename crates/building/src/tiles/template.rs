@@ -121,10 +121,13 @@ impl DoorId {
     }
 
     /// Get the door that would connect to this one from an adjacent tile.
+    /// The matching door is on the opposite wall at the SAME position.
+    /// (Position indices align when tiles are adjacent - both walls use
+    /// the same coordinate axis for position.)
     pub fn matching_door(self) -> Self {
         Self {
             side: self.side.opposite(),
-            position: self.position.mirror(),
+            position: self.position, // Same position, not mirrored!
         }
     }
 }
@@ -255,9 +258,16 @@ mod tests {
 
     #[test]
     fn test_matching_door() {
+        // North-Left matches South-Left (same position on opposite wall)
         let door = DoorId::new(TileSide::North, DoorPosition::Left);
         let matching = door.matching_door();
         assert_eq!(matching.side, TileSide::South);
+        assert_eq!(matching.position, DoorPosition::Left);
+
+        // East-Right matches West-Right
+        let door = DoorId::new(TileSide::East, DoorPosition::Right);
+        let matching = door.matching_door();
+        assert_eq!(matching.side, TileSide::West);
         assert_eq!(matching.position, DoorPosition::Right);
     }
 }
