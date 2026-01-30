@@ -1,6 +1,7 @@
 //! Glowing grid floor for Tron aesthetic with multi-floor rendering
 
 use bevy::prelude::*;
+use ddd_building::BuildMode;
 use ddd_core::DungeonGrid;
 use ddd_floors::{FireFloor, FloorTypeMarker, IceFloor};
 use crate::TronPalette;
@@ -57,6 +58,7 @@ impl Plugin for GridPlugin {
             .add_systems(Update, (
                 update_active_floor_grids,
                 update_grid_color_for_floor_type,
+                hide_combat_grid_in_build_mode,
             ).chain());
     }
 }
@@ -232,6 +234,31 @@ fn update_active_floor_grids(
             mat.base_color = palette.grid.with_alpha(alpha);
             mat.emissive = TronPalette::to_emissive(palette.grid, 1.5 * emissive_mult);
         }
+    }
+}
+
+/// Hide combat grid when in build mode (planning grid takes over)
+fn hide_combat_grid_in_build_mode(
+    build_mode: Res<State<BuildMode>>,
+    mut floor_query: Query<&mut Visibility, With<GridFloor>>,
+    mut line_query: Query<&mut Visibility, (With<GridLine>, Without<GridFloor>)>,
+) {
+    if !build_mode.is_changed() {
+        return;
+    }
+
+    let in_build_mode = *build_mode.get() != BuildMode::Disabled;
+    let target_visibility = if in_build_mode {
+        Visibility::Hidden
+    } else {
+        Visibility::Visible
+    };
+
+    for mut visibility in floor_query.iter_mut() {
+        *visibility = target_visibility;
+    }
+    for mut visibility in line_query.iter_mut() {
+        *visibility = target_visibility;
     }
 }
 

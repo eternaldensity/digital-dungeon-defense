@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add trap visuals (Firewall, DataSpike) (#1)
 
 ### Fixed
+- Fix duplicate grid rendering - old grid drawn alongside new tile grid (#29)
 - Fix speed modifier applying every frame (#21)
 
 ### Changed
